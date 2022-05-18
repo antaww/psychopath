@@ -25,11 +25,16 @@ canvas.cvs.addEventListener("mousemove", function (event) {
         let x = event.offsetX;
         let y = event.offsetY;
         getCurrentCell(x, y);
+        colorCell("#000")
     }
 });
 
 
 resetBtn.addEventListener("click", function (event) {
+    console.clear();
+    isPlaying = false;
+    canvas.cvs.attributes.width.value = 0;
+    canvas.cvs.attributes.height.value = 0;
 });
 
 ///////////
@@ -71,4 +76,15 @@ function getCurrentCell(x, y) {
     let column = Math.floor(x / width);
     console.log("Row : ", row + 1, "Column : " ,column + 1);
     return [row + 1, column + 1];
+}
+
+//colorCell function to color the cell using getCurrentCell function
+function colorCell(color) {
+    let cell = getCurrentCell(event.offsetX, event.offsetY);
+    let width = canvas.cvs.width / 5;
+    let height = canvas.cvs.height / 5;
+    let row = cell[0] - 1;
+    let column = cell[1] - 1;
+    canvas.ctx.fillStyle = color;
+    canvas.ctx.fillRect(column * width, row * height, width, height);
 }
