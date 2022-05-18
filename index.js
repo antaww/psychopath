@@ -13,6 +13,8 @@ let isClicking = false;
 let timerValue = 0;
 let currentDifficulty = 0; // 0 = not playing, 5 = easy, 6 = medium, 8 = hard
 
+let cellPathColor = "#9a7999"
+
 
 playBtn.addEventListener("click", function (event) {
     console.clear();
@@ -25,6 +27,7 @@ playBtn.addEventListener("click", function (event) {
     canvas.cvs.attributes.height.value = 400;
     fillCanvas("#fff");
     drawGrid("#000", currentDifficulty, currentDifficulty, 1);
+    randomPath();
 
 });
 
@@ -48,7 +51,7 @@ canvas.cvs.addEventListener("mousemove", function (event) {
             let x = event.offsetX;
             let y = event.offsetY;
             getCurrentCell(x, y);
-            colorCell("#000")
+            colorCellOnClick("#000")
         }
     }
 });
@@ -68,6 +71,7 @@ resetBtn.addEventListener("click", function (event) {
     canvas.cvs.attributes.width.value = 0;
     canvas.cvs.attributes.height.value = 0;
 });
+
 
 ///////////
 // UTILS //
@@ -131,12 +135,26 @@ function getCurrentCell(x, y) {
  * It takes a color and fills the cell that the user clicked on with that color
  * @param color - the color to fill the cell with
  */
-function colorCell(color) {
+function colorCellOnClick(color) {
     let cell = getCurrentCell(event.offsetX, event.offsetY);
-    let width = canvas.cvs.width / 5;
-    let height = canvas.cvs.height / 5;
+    let width = canvas.cvs.width / currentDifficulty;
+    let height = canvas.cvs.height / currentDifficulty;
     let row = cell[0] - 1;
     let column = cell[1] - 1;
+    canvas.ctx.fillStyle = color;
+    canvas.ctx.fillRect(column * width, row * height, width, height);
+}
+
+
+/**
+ * It takes a row, column, and color, and then fills a rectangle with that color at the given row and column
+ * @param row - The row of the cell to color.
+ * @param column - The column of the cell to color.
+ * @param color - The color to fill the cell with.
+ */
+function colorCell(row, column, color) {
+    let width = canvas.cvs.width / currentDifficulty;
+    let height = canvas.cvs.height / currentDifficulty;
     canvas.ctx.fillStyle = color;
     canvas.ctx.fillRect(column * width, row * height, width, height);
 }
@@ -150,7 +168,10 @@ function resetCells() {
     drawGrid("#000", currentDifficulty, currentDifficulty, 1);
 }
 
-//startTimer displays the timer on the screen (minutes:seconds)
+
+/**
+ * It starts a timer that counts up in minutes and seconds, and displays the time in the timer element
+ */
 function startTimer() {
     timerValue = 0;
     timer.innerHTML = "00:00";
@@ -168,6 +189,64 @@ function startTimer() {
     }, 1000);
 }
 
+/**
+ * Stop the timer by clearing the timer interval.
+ */
 function stopTimer() {
     clearInterval(timerInterval);
+}
+
+function getRandomCell() {
+    let row = Math.floor(Math.random() * currentDifficulty);
+    let column = Math.floor(Math.random() * currentDifficulty);
+    return [row, column];
+}
+
+
+function randomPath() {
+    let pathCount = Math.floor(currentDifficulty * currentDifficulty / 3);
+    console.log("Paths Drawn : ", pathCount);
+
+    let startCell = getRandomCell();
+
+    console.log("Start Cell : ", startCell);
+    console.log("Row : ", startCell[0], "Column : ", startCell[1]);
+    colorCell(startCell[0], startCell[1], cellPathColor);
+
+    let drawnCells = [];
+    drawnCells.push(startCell);
+    while (drawnCells.length < pathCount) {
+        let currentCell = drawnCells[drawnCells.length - 1];
+        let neighbors = checkNeighbors(currentCell[0], currentCell[1]);
+        let neighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
+        if (!drawnCells.some(cell => cell[0] === neighbor[0] && cell[1] === neighbor[1])) {
+            drawnCells.push(neighbor);
+            colorCell(neighbor[0], neighbor[1], cellPathColor);
+        }
+    }
+    console.log("Path : ", drawnCells, "Length : ", drawnCells.length);
+}
+
+
+/**
+ * It returns an array of the coordinates of the neighbors of a given cell
+ * @param row - the row of the cell we're checking
+ * @param column - the column of the cell that was clicked
+ * @returns An array of arrays.
+ */
+function checkNeighbors(row, column) {
+    let neighbors = [];
+    if (row > 0) {
+        neighbors.push([row - 1, column]);
+    }
+    if (row < currentDifficulty - 1) {
+        neighbors.push([row + 1, column]);
+    }
+    if (column > 0) {
+        neighbors.push([row, column - 1]);
+    }
+    if (column < currentDifficulty - 1) {
+        neighbors.push([row, column + 1]);
+    }
+    return neighbors;
 }
