@@ -24,7 +24,6 @@
 .game-button {
     position: relative;
     top: 0;
-    cursor: pointer;
     text-decoration: none !important;
     outline: none !important;
     font-family: 'Carter One', sans-serif;
@@ -41,9 +40,15 @@
     border-radius: 8px;
     padding: 8px 15px 10px;
     box-shadow: 0 6px 0 #266b91, 0 8px 1px 1px rgba(0,0,0,.3), 0 10px 0 5px #12517d, 0 12px 0 5px #1a6b9a, 0 15px 0 5px #0c405e, 0 15px 1px 6px rgba(0,0,0,.3);
+    min-width: 82px;
+    text-align: center;
 }
 
-.game-button:hover {
+.game-button:not(.purple){
+    cursor: pointer;
+}
+
+.game-button:hover(:not(.purple)) {
     top:2px;
     box-shadow: 0 4px 0 #266b91, 0 6px 1px 1px rgba(0,0,0,.3), 0 8px 0 5px #12517d, 0 10px 0 5px #1a6b9a, 0 13px 0 5px #0c405e, 0 13px 1px 6px rgba(0,0,0,.3);
 }
@@ -80,6 +85,13 @@
 .game-button.green:hover {
     top:2px;
     box-shadow: 0 4px 0 #348628, 0 6px 1px 1px rgba(0,0,0,.3), 0 8px 0 5px #2a6d20, 0 10px 0 5px #39822e, 0 13px 0 5px #1d4c16, 0 13px 1px 6px rgba(0,0,0,.3);
+}
+
+.game-button.purple {
+    background: repeating-linear-gradient( 45deg, #cf40d4, #c840d4 5px, #ba3fcc 5px, #cc3fa9 10px);
+    box-shadow: 0 6px 0 #862885, 0 8px 1px 1px rgba(0,0,0,.3), 0 10px 0 5px #6d206c, 0 12px 0 5px #642e82, 0 15px 0 5px #48164c, 0 15px 1px 6px rgba(0,0,0,.3);
+    border-bottom: 3px solid rgba(110, 29, 117, 0.5);
+    text-shadow: 2px 2px 1px #7f2886, -2px 2px 1px #642886, 2px -2px 1px #7a2886, -2px -2px 1px #862885, 0px 2px 1px #86286a, 0px -2px 1px #862885, 0px 4px 1px #4c1644, 2px 4px 1px #4c1639, -2px 4px 1px #4c163f;
 }
 
 .game-button.red {
