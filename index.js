@@ -1,6 +1,7 @@
 let playBtn = document.querySelector("#play");
 let resetBtn = document.querySelector("#reset");
 let timer = document.querySelector(".timer");
+let levelDiv = document.querySelector(".level");
 
 let canvas = {
     cvs: document.querySelector(".grid"),
@@ -60,8 +61,13 @@ canvas.cvs.addEventListener("mousemove", function (event) {
             getCurrentCell(x, y);
             colorCellOnClick("#000")
             if (userClickedCells.length === drawnCells.length) {
+                console.log("userClickedCells", userClickedCells);
+                console.log("drawnCells", drawnCells);
                 if (areArraysEqual(userClickedCells, drawnCells)) {
                     levelFinished = true;
+                    console.log("Level finished");
+                } else {
+                    userClickedCells = [];
                 }
             }
         }
@@ -91,6 +97,7 @@ resetBtn.addEventListener("click", function (event) {
  */
 function initGrid(difficulty) {
     playBtn.style.display = "none";
+    levelDiv.style.display = "block";
     isPlaying = true;
     timer.style.display = "block";
     currentDifficulty = difficulty;
@@ -104,13 +111,17 @@ function initGrid(difficulty) {
  * path
  */
 function generateGame() {
+    userClickedCells = [];
     currentLevel += 1;
-    if (currentLevel > 5 && currentLevel < 10) {
+    levelDiv.innerHTML = "Level " + currentLevel;
+    if (currentLevel <= 5) {
         currentDifficulty = 5;
-    } else if (currentLevel > 10 && currentLevel < 15) {
+    } else if (currentLevel > 5 && currentLevel <= 10) {
         currentDifficulty = 6;
-    } else if (currentLevel > 15) {
+    } else if (currentLevel > 10 && currentLevel <= 15) {
         currentDifficulty = 8;
+    } else if (currentLevel > 15) {
+        closeGame();
     }
     drawnCells = [];
     fillCanvas("#fff");
@@ -123,6 +134,7 @@ function generateGame() {
  */
 function closeGame() {
     playBtn.style.display = "block";
+    levelDiv.style.display = "none";
     isPlaying = false;
     stopTimer();
     canvas.cvs.attributes.width.value = 0;
@@ -173,11 +185,10 @@ function drawGrid(color, rows, columns, borderSize) {
  * @returns The row and column of the cell that the user clicked on.
  */
 function getCurrentCell(x, y) {
-    let width = canvas.cvs.width / 5;
-    let height = canvas.cvs.height / 5;
+    let width = canvas.cvs.width / currentDifficulty;
+    let height = canvas.cvs.height / currentDifficulty;
     let row = Math.floor(y / height);
     let column = Math.floor(x / width);
-    console.log("Row : ", row + 1, "Column : ", column + 1);
     return [row, column];
 }
 
@@ -196,7 +207,6 @@ function colorCellOnClick(color) {
     canvas.ctx.fillRect(column * width, row * height, width, height);
     if (!userClickedCells.some(cell => cell[0] === row && cell[1] === column)) {
         userClickedCells.push(cell);
-        console.log("USER CICKED", userClickedCells, "length : ", userClickedCells.length);
     }
 }
 
@@ -219,12 +229,12 @@ function colorCell(row, column, color) {
  * It resets the canvas to its original state
  */
 function resetCells() {
+    userClickedCells = [];
     fillCanvas("#fff");
     drawGrid("#000", currentDifficulty, currentDifficulty, 1);
     for (let i = 0; i < drawnCells.length; i++) {
         colorCell(drawnCells[i][0], drawnCells[i][1], cellPathColor);
     }
-    userClickedCells = [];
 }
 
 
@@ -276,19 +286,24 @@ function randomPath() {
 
     let startCell = getRandomCell();
 
-    console.log("Start Cell : ", startCell);
-    console.log("Row : ", startCell[0], "Column : ", startCell[1]);
     colorCell(startCell[0], startCell[1], cellPathColor);
 
     drawnCells.push(startCell);
+    let n = 0;
     while (drawnCells.length < pathCount) {
+        n++;
         let currentCell = drawnCells[drawnCells.length - 1];
         let neighbors = checkNeighbors(currentCell[0], currentCell[1]);
-        console.log("Neighbors : ", neighbors);
         let neighbor = neighbors[Math.floor(Math.random() * neighbors.length)]; //todo: optimize this
         if (!drawnCells.some(cell => cell[0] === neighbor[0] && cell[1] === neighbor[1])) {
             drawnCells.push(neighbor);
             colorCell(neighbor[0], neighbor[1], cellPathColor);
+        }
+        if (n > pathCount*2){
+            drawnCells = [];
+            resetCells();
+            randomPath();
+            return;
         }
     }
     console.log("Path : ", drawnCells, "Length : ", drawnCells.length);
