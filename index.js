@@ -9,26 +9,23 @@ let canvas = {
 
 let isPlaying = false;
 let isClicking = false;
+let levelFinished = false;
+
+let drawnCells = [];
+let userClickedCells = [];
 
 let timerValue = 0;
 let currentDifficulty = 0; // 0 = not playing, 5 = easy, 6 = medium, 8 = hard
+let levelsCount = 15;
+let currentLevel = 0;
 
 let cellPathColor = "#9a7999"
 
 
 playBtn.addEventListener("click", function (event) {
     console.clear();
-    playBtn.style.display = "none";
-    isPlaying = true;
-    timer.style.display = "block";
-    currentDifficulty = 5;
-    startTimer();
-    canvas.cvs.attributes.width.value = 400;
-    canvas.cvs.attributes.height.value = 400;
-    fillCanvas("#fff");
-    drawGrid("#000", currentDifficulty, currentDifficulty, 1);
-    randomPath();
-
+    initGrid(5);
+    generateGame();
 });
 
 window.addEventListener("mousedown", function (event) {
@@ -39,6 +36,16 @@ window.addEventListener("mousedown", function (event) {
 
 window.addEventListener("mouseup", function (event) {
     if (isPlaying) {
+        if(levelFinished) {
+            if(currentLevel > levelsCount) {
+                closeGame();
+                return;
+            }
+            levelFinished = false;
+            isClicking = false;
+            generateGame();
+            return;
+        }
         resetCells();
         isClicking = false;
     }
@@ -52,6 +59,13 @@ canvas.cvs.addEventListener("mousemove", function (event) {
             let y = event.offsetY;
             getCurrentCell(x, y);
             colorCellOnClick("#000")
+            if (userClickedCells.length === drawnCells.length) {
+                for (let i = 0; i < userClickedCells.length; i++) {
+                    if (drawnCells.some(cell => cell[0] === userClickedCells[i][0] && cell[1] === userClickedCells[i][1])) {
+                        levelFinished = true;
+                    }
+                }
+            }
         }
     }
 });
@@ -63,13 +77,11 @@ canvas.cvs.addEventListener("mouseout", function (event) {
     }
 });
 
+
+
 resetBtn.addEventListener("click", function (event) {
     console.clear();
-    playBtn.style.display = "block";
-    isPlaying = false;
-    stopTimer();
-    canvas.cvs.attributes.width.value = 0;
-    canvas.cvs.attributes.height.value = 0;
+    closeGame();
 });
 
 
@@ -77,6 +89,48 @@ resetBtn.addEventListener("click", function (event) {
 // UTILS //
 ///////////
 
+/**
+ * It sets up the grid
+ */
+function initGrid(difficulty) {
+    playBtn.style.display = "none";
+    isPlaying = true;
+    timer.style.display = "block";
+    currentDifficulty = difficulty;
+    startTimer();
+    canvas.cvs.attributes.width.value = 400;
+    canvas.cvs.attributes.height.value = 400;
+}
+
+/**
+ * It fills the canvas with white, draws a grid, clears the array of cells that have been drawn, and then draws a random
+ * path
+ */
+function generateGame() {
+    currentLevel += 1;
+    if (currentLevel > 5 && currentLevel < 10) {
+        currentDifficulty = 5;
+    } else if (currentLevel > 10 && currentLevel < 15) {
+        currentDifficulty = 6;
+    } else if (currentLevel > 15) {
+        currentDifficulty = 8;
+    }
+    drawnCells = [];
+    fillCanvas("#fff");
+    drawGrid("#000", currentDifficulty, currentDifficulty, 1);
+    randomPath();
+}
+
+/**
+ * It closes the game by hiding the play button, stopping the timer, and setting the canvas width and height to 0
+ */
+function closeGame() {
+    playBtn.style.display = "block";
+    isPlaying = false;
+    stopTimer();
+    canvas.cvs.attributes.width.value = 0;
+    canvas.cvs.attributes.height.value = 0;
+}
 
 /**
  * Fill the canvas with a color.
@@ -143,6 +197,11 @@ function colorCellOnClick(color) {
     let column = cell[1] - 1;
     canvas.ctx.fillStyle = color;
     canvas.ctx.fillRect(column * width, row * height, width, height);
+    //push cell to userClickedCells array if it is not already in there (using some and getCurrentCell)
+    if (!userClickedCells.some(cell => cell[0] === row + 1 && cell[1] === column + 1)) {
+        userClickedCells.push(cell);
+        console.log("USER CICKED", userClickedCells, "length : ", userClickedCells.length);
+    }
 }
 
 
@@ -166,6 +225,10 @@ function colorCell(row, column, color) {
 function resetCells() {
     fillCanvas("#fff");
     drawGrid("#000", currentDifficulty, currentDifficulty, 1);
+    for (let i = 0; i < drawnCells.length; i++) {
+        colorCell(drawnCells[i][0], drawnCells[i][1], cellPathColor);
+    }
+    userClickedCells = [];
 }
 
 
@@ -213,12 +276,12 @@ function randomPath() {
     console.log("Row : ", startCell[0], "Column : ", startCell[1]);
     colorCell(startCell[0], startCell[1], cellPathColor);
 
-    let drawnCells = [];
     drawnCells.push(startCell);
     while (drawnCells.length < pathCount) {
         let currentCell = drawnCells[drawnCells.length - 1];
         let neighbors = checkNeighbors(currentCell[0], currentCell[1]);
-        let neighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
+        console.log("Neighbors : ", neighbors);
+        let neighbor = neighbors[Math.floor(Math.random() * neighbors.length)]; //todo: optimize this
         if (!drawnCells.some(cell => cell[0] === neighbor[0] && cell[1] === neighbor[1])) {
             drawnCells.push(neighbor);
             colorCell(neighbor[0], neighbor[1], cellPathColor);
