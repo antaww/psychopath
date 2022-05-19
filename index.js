@@ -98,9 +98,11 @@ resetBtn.addEventListener("click", function (event) {
 function initGrid(difficulty) {
     playBtn.style.display = "none";
     levelDiv.style.display = "block";
+    resetBtn.style.display = "block";
     isPlaying = true;
     timer.style.display = "block";
     currentDifficulty = difficulty;
+    currentLevel = 0;
     startTimer();
     canvas.cvs.attributes.width.value = 400;
     canvas.cvs.attributes.height.value = 400;
@@ -135,6 +137,7 @@ function generateGame() {
 function closeGame() {
     playBtn.style.display = "block";
     levelDiv.style.display = "none";
+    resetBtn.style.display = "none";
     isPlaying = false;
     stopTimer();
     canvas.cvs.attributes.width.value = 0;
