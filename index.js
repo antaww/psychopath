@@ -36,8 +36,8 @@ window.addEventListener("mousedown", function (event) {
 
 window.addEventListener("mouseup", function (event) {
     if (isPlaying) {
-        if(levelFinished) {
-            if(currentLevel > levelsCount) {
+        if (levelFinished) {
+            if (currentLevel > levelsCount) {
                 closeGame();
                 return;
             }
@@ -60,10 +60,8 @@ canvas.cvs.addEventListener("mousemove", function (event) {
             getCurrentCell(x, y);
             colorCellOnClick("#000")
             if (userClickedCells.length === drawnCells.length) {
-                for (let i = 0; i < userClickedCells.length; i++) {
-                    if (drawnCells.some(cell => cell[0] === userClickedCells[i][0] && cell[1] === userClickedCells[i][1])) {
-                        levelFinished = true;
-                    }
+                if (areArraysEqual(userClickedCells, drawnCells)) {
+                    levelFinished = true;
                 }
             }
         }
@@ -76,7 +74,6 @@ canvas.cvs.addEventListener("mouseout", function (event) {
         resetCells();
     }
 });
-
 
 
 resetBtn.addEventListener("click", function (event) {
@@ -180,8 +177,8 @@ function getCurrentCell(x, y) {
     let height = canvas.cvs.height / 5;
     let row = Math.floor(y / height);
     let column = Math.floor(x / width);
-    console.log("Row : ", row + 1, "Column : " ,column + 1);
-    return [row + 1, column + 1];
+    console.log("Row : ", row + 1, "Column : ", column + 1);
+    return [row, column];
 }
 
 
@@ -193,12 +190,11 @@ function colorCellOnClick(color) {
     let cell = getCurrentCell(event.offsetX, event.offsetY);
     let width = canvas.cvs.width / currentDifficulty;
     let height = canvas.cvs.height / currentDifficulty;
-    let row = cell[0] - 1;
-    let column = cell[1] - 1;
+    let row = cell[0];
+    let column = cell[1];
     canvas.ctx.fillStyle = color;
     canvas.ctx.fillRect(column * width, row * height, width, height);
-    //push cell to userClickedCells array if it is not already in there (using some and getCurrentCell)
-    if (!userClickedCells.some(cell => cell[0] === row + 1 && cell[1] === column + 1)) {
+    if (!userClickedCells.some(cell => cell[0] === row && cell[1] === column)) {
         userClickedCells.push(cell);
         console.log("USER CICKED", userClickedCells, "length : ", userClickedCells.length);
     }
@@ -259,6 +255,10 @@ function stopTimer() {
     clearInterval(timerInterval);
 }
 
+/**
+ * It returns a random cell in the grid
+ * @returns An array with two elements, a random row and a random column.
+ */
 function getRandomCell() {
     let row = Math.floor(Math.random() * currentDifficulty);
     let column = Math.floor(Math.random() * currentDifficulty);
@@ -266,6 +266,10 @@ function getRandomCell() {
 }
 
 
+/**
+ * It starts at a random cell, then checks the neighbors of the current cell, and if the neighbor hasn't been drawn yet, it
+ * draws it and adds it to the list of drawn cells
+ */
 function randomPath() {
     let pathCount = Math.floor(currentDifficulty * currentDifficulty / 3);
     console.log("Paths Drawn : ", pathCount);
@@ -312,4 +316,19 @@ function checkNeighbors(row, column) {
         neighbors.push([row, column + 1]);
     }
     return neighbors;
+}
+
+/**
+ * It takes two arrays of arrays, sorts them by the first element in each array, and then compares them to see if they are
+ * equal
+ */
+function areArraysEqual(array1, array2) {
+    array1.sort(function (a, b) {
+        return a[0] - b[0] || a[1] - b[1];
+    });
+    array2.sort(function (a, b) {
+        return a[0] - b[0] || a[1] - b[1];
+    });
+    const equals = (array1, array2) => JSON.stringify(array1) === JSON.stringify(array2);
+    return equals(array1, array2);
 }
