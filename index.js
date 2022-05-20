@@ -2,6 +2,8 @@ let playBtn = document.querySelector("#play");
 let resetBtn = document.querySelector("#reset");
 let timer = document.querySelector(".timer");
 let levelDiv = document.querySelector(".level");
+let failCross = document.querySelector(".cross");
+let nicknameDiv = document.querySelector("#nickname");
 
 let canvas = {
     cvs: document.querySelector(".grid"),
@@ -21,14 +23,50 @@ let levelsCount = 15;
 let currentLevel = 0;
 
 let cellPathColor = "#9a7999"
+let nickname = "";
 
 
 playBtn.addEventListener("click", function (event) {
+    playBtn.classList.add("bounceOutDown");
+    setTimeout(function () {
+        playBtn.classList.remove("bounceOutDown");
+        playBtn.style.display = "none";
+        nicknameDiv.style.display = "block";
+        nicknameDiv.classList.add("bounceInDown");
+        setTimeout(function () {
+            nicknameDiv.classList.remove("bounceInDown");
+        }, 1000);
+    }, 1000);
+});
+
+window.addEventListener("keydown", function (event) {
+    if (event.keyCode === 13) {
+        if(nicknameDiv.style.display === "block") {
+            checkName();
+        }
+    }
+});
+
+function startGame() {
     console.clear();
     initGrid(5);
     startTimer();
     generateGame();
-});
+}
+
+function checkName() {
+    if (nicknameDiv.value !== "") {
+        nickname = nicknameDiv.value;
+        nicknameDiv.classList.remove("bounceInDown");
+        nicknameDiv.style.display = "none";
+        startGame();
+    } else {
+        nicknameDiv.classList.add("shake");
+        setTimeout(function () {
+            nicknameDiv.classList.remove("shake");
+        }, 0.5 * 1000);
+    }
+}
 
 window.addEventListener("mousedown", function (event) {
     if (isPlaying) {
@@ -85,7 +123,22 @@ canvas.cvs.addEventListener("mouseout", function (event) {
 
 resetBtn.addEventListener("click", function (event) {
     console.clear();
-    closeGame();
+    stopTimer();
+    hideButtons();
+    hideCanvas();
+    failCross.style.display = "block";
+    failCross.classList.remove("bounceOutDown");
+    failCross.classList.add("bounceInDown");
+    isPlaying = false;
+    isClicking = false;
+    setTimeout(function () {
+        setTimeout(function () {
+            failCross.style.display = "none";
+            closeGame();
+        }, 700);
+        failCross.classList.remove("bounceInDown");
+        failCross.classList.add("bounceOutDown");
+    }, 1000);
 });
 
 
@@ -123,12 +176,14 @@ function generateGame() {
     } else if (currentLevel > 10 && currentLevel <= 15) {
         currentDifficulty = 8;
     } else if (currentLevel > 15) {
+        localStorage.setItem(nickname, timerValue);
         closeGame();
     }
     fillCanvas("#fff");
     drawGrid("#000", currentDifficulty, currentDifficulty, 1);
     randomPath();
 }
+
 
 /**
  * It closes the game by hiding the play button, stopping the timer, and setting the canvas width and height to 0
@@ -138,9 +193,9 @@ function closeGame() {
     levelDiv.style.display = "none";
     resetBtn.style.display = "none";
     isPlaying = false;
+    nickname = "";
     stopTimer();
-    canvas.cvs.attributes.width.value = 0;
-    canvas.cvs.attributes.height.value = 0;
+    hideCanvas();
 }
 
 /**
@@ -369,3 +424,14 @@ function checkLastCell(row, column) {
     return true;
 }
 
+function hideCanvas() {
+    canvas.cvs.attributes.width.value = 0;
+    canvas.cvs.attributes.height.value = 0;
+}
+
+function hideButtons() {
+    playBtn.style.display = "none";
+    levelDiv.style.display = "none";
+    resetBtn.style.display = "none";
+    timer.style.display = "none";
+}

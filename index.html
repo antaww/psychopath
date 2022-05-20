@@ -10,13 +10,19 @@
 <div class="container">
     <div class="timer difficulty-button game-button purple" style="display: none"></div>
     <div class="difficulty">
-        <button class="difficulty-button game-button green" id="play">Play</button>
+        <button class="difficulty-button game-button green bounceInDown" id="play">Play</button>
+        <input type="text" class="difficulty-button game-button purple" id="nickname" placeholder="Enter your nickname"
+               style="display: none">
         <button class="difficulty-button game-button red" id="reset" style="display: none">Reset</button>
     </div>
     <div class="game-info">
         <div class="level difficulty-button game-button yellow" style="display: none"></div>
         <canvas class="grid" width="0" height="0"></canvas>
     </div>
+    <div class="cross difficulty-button game-button red" style="display: none">
+        <div class="cross-content heartBeat">❌</div>
+    </div>
 </div>
 </body>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet"/>
 </html>

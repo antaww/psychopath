@@ -6,6 +6,8 @@
 
 body {
     background: repeating-linear-gradient(45deg, #3ebbf7, #3ebbf7 5px, #45b1f4 5px, #45b1f4 10px);
+    overflow-x: hidden;
+    overflow-y: hidden;
 }
 
 .difficulty {
@@ -104,6 +106,10 @@ body {
     text-shadow: 2px 2px 1px #b8a928, -2px 2px 1px #b8a928, 2px -2px 1px #b8a928, -2px -2px 1px #b8a928, 0px 2px 1px #b8a928, 0px -2px 1px #b8a928, 0px 4px 1px #7c5e16, 2px 4px 1px #7c5e16, -2px 4px 1px #7c5e16;
 }
 
+.game-button.red.cross {
+    text-shadow: 2px 2px 1px #000000, -2px 2px 1px #000000, 2px -2px 1px #000000, -2px -2px 1px #000000, 0px 2px 1px #000000, 0px -2px 1px #000000, 0px 4px 1px #000000, 2px 4px 1px #000000, -2px 4px 1px #000000;
+}
+
 .game-button.red {
     background: repeating-linear-gradient(45deg, #ff4f4c, #ff4f4c 5px, #ff4643 5px, #ff4643 10px);
     box-shadow: 0 6px 0 #ae2725, 0 8px 1px 1px rgba(0, 0, 0, .3), 0 10px 0 5px #831614, 0 12px 0 5px #a33634, 0 15px 0 5px #631716, 0 15px 1px 6px rgba(0, 0, 0, .3);
@@ -118,4 +124,20 @@ body {
 
 .grid {
     box-shadow: 0 19px 38px rgba(0, 0, 0, 0.30), 0 15px 12px rgba(0, 0, 0, 0.22);
+}
+
+.bounceInDown {
+    animation-name: bounceInDown;
+    animation-duration: 1s;
+    animation-fill-mode: both;
+}
+
+.bounceOutDown {
+    animation-name: bounceOutDown;
+    animation-duration: 1s;
+    animation-fill-mode: both;
+}
+
+.shake {
+    animation: headShake 0.5s linear alternate;
 }
