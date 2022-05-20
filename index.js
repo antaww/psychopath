@@ -4,6 +4,7 @@ let timer = document.querySelector(".timer");
 let levelDiv = document.querySelector(".level");
 let failCross = document.querySelector(".cross");
 let nicknameDiv = document.querySelector("#nickname");
+let scoreboard = document.querySelector(".scoreboard");
 
 let canvas = {
     cvs: document.querySelector(".grid"),
@@ -25,8 +26,11 @@ let currentLevel = 0;
 let cellPathColor = "#9a7999"
 let nickname = "";
 
+window.addEventListener("load", updateScoreboard);
 
 playBtn.addEventListener("click", function (event) {
+    timer.style.display = "none";
+    timer.classList.remove("bounceInDown");
     playBtn.classList.add("bounceOutDown");
     setTimeout(function () {
         playBtn.classList.remove("bounceOutDown");
@@ -41,32 +45,12 @@ playBtn.addEventListener("click", function (event) {
 
 window.addEventListener("keydown", function (event) {
     if (event.keyCode === 13) {
-        if(nicknameDiv.style.display === "block") {
+        if (nicknameDiv.style.display === "block") {
             checkName();
         }
     }
 });
 
-function startGame() {
-    console.clear();
-    initGrid(5);
-    startTimer();
-    generateGame();
-}
-
-function checkName() {
-    if (nicknameDiv.value !== "") {
-        nickname = nicknameDiv.value;
-        nicknameDiv.classList.remove("bounceInDown");
-        nicknameDiv.style.display = "none";
-        startGame();
-    } else {
-        nicknameDiv.classList.add("shake");
-        setTimeout(function () {
-            nicknameDiv.classList.remove("shake");
-        }, 0.5 * 1000);
-    }
-}
 
 window.addEventListener("mousedown", function (event) {
     if (isPlaying) {
@@ -147,6 +131,33 @@ resetBtn.addEventListener("click", function (event) {
 ///////////
 
 /**
+ * `startGame()` clears the console, initializes the grid, starts the timer, and generates the game
+ */
+function startGame() {
+    console.clear();
+    initGrid(5);
+    startTimer();
+    generateGame();
+}
+
+/**
+ * It checks if the name is valid and if it is, it starts the game.
+ */
+function checkName() {
+    if (nicknameDiv.value !== "") {
+        nickname = nicknameDiv.value;
+        nicknameDiv.classList.remove("bounceInDown");
+        nicknameDiv.style.display = "none";
+        startGame();
+    } else {
+        nicknameDiv.classList.add("shake");
+        setTimeout(function () {
+            nicknameDiv.classList.remove("shake");
+        }, 0.5 * 1000);
+    }
+}
+
+/**
  * It sets up the grid
  */
 function initGrid(difficulty) {
@@ -176,7 +187,14 @@ function generateGame() {
     } else if (currentLevel > 10 && currentLevel <= 15) {
         currentDifficulty = 8;
     } else if (currentLevel > 15) {
-        localStorage.setItem(nickname, timerValue);
+        if (localStorage.getItem(nickname) !== null) {
+            if (timerValue < localStorage.getItem(nickname)) {
+                localStorage.setItem(nickname, timerValue);
+            }
+        } else {
+            localStorage.setItem(nickname, timerValue);
+        }
+        updateScoreboard();
         closeGame();
     }
     fillCanvas("#fff");
@@ -192,6 +210,7 @@ function closeGame() {
     playBtn.style.display = "block";
     levelDiv.style.display = "none";
     resetBtn.style.display = "none";
+    timer.classList.add("bounceInDown")
     isPlaying = false;
     nickname = "";
     stopTimer();
@@ -414,6 +433,12 @@ function areArraysEqual(array1, array2) {
     return equals(array1, array2);
 }
 
+/**
+ * If the user has clicked more than one cell, and the last cell clicked is the same as the current cell, then return false
+ * @param row - the row of the cell that was clicked
+ * @param column - the column of the cell that was clicked
+ * @returns a boolean value.
+ */
 function checkLastCell(row, column) {
     if (userClickedCells.length > 1) {
         let lastCell = userClickedCells[userClickedCells.length - 1];
@@ -424,14 +449,46 @@ function checkLastCell(row, column) {
     return true;
 }
 
+/**
+ * It sets the width and height of the canvas to 0
+ */
 function hideCanvas() {
     canvas.cvs.attributes.width.value = 0;
     canvas.cvs.attributes.height.value = 0;
 }
 
+/**
+ * It hides buttons (play, level, reset & timer).
+ */
 function hideButtons() {
     playBtn.style.display = "none";
     levelDiv.style.display = "none";
     resetBtn.style.display = "none";
     timer.style.display = "none";
 }
+
+/**
+ * It loops through all the items in localStorage, adds them to an array, sorts the array, and then adds the sorted array
+ * to the scoreboard
+ * @returns the value of the variable "scoreboardHTML".
+ */
+function updateScoreboard() {
+    let localStorageArray = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        localStorageArray.push([localStorage.key(i), localStorage.getItem(localStorage.key(i))]);
+    }
+
+    localStorageArray.sort(function (a, b) {
+        return a[1] - b[1];
+    });
+
+    let scoreboardHTML = scoreboard.innerHTML;
+
+    for (let i = 0; i < localStorageArray.length; i++) {
+        scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${localStorageArray[i][1]} seconds</div>`;
+    }
+
+    scoreboard.innerHTML = scoreboardHTML;
+}
+
+

@@ -141,3 +141,12 @@ body {
 .shake {
     animation: headShake 0.5s linear alternate;
 }
+
+.scoreboard {
+    position: absolute;
+    font-family: 'Carter One', sans-serif;
+    top: 0;
+    right: 0;
+    margin-right: 10px;
+    margin-top: 5px;
+}
