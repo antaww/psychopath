@@ -482,7 +482,7 @@ function updateScoreboard() {
         return a[1] - b[1];
     });
 
-    let scoreboardHTML = scoreboard.innerHTML;
+    let scoreboardHTML = "Scoreboard";
 
     for (let i = 0; i < localStorageArray.length; i++) {
         scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${localStorageArray[i][1]} seconds</div>`;
