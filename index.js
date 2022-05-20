@@ -26,6 +26,7 @@ let cellPathColor = "#9a7999"
 playBtn.addEventListener("click", function (event) {
     console.clear();
     initGrid(5);
+    startTimer();
     generateGame();
 });
 
@@ -47,7 +48,7 @@ window.addEventListener("mouseup", function (event) {
             generateGame();
             return;
         }
-        resetCells();
+        failedTry();
         isClicking = false;
     }
 });
@@ -74,10 +75,10 @@ canvas.cvs.addEventListener("mousemove", function (event) {
     }
 });
 
-//if the mouse is out of the canvas resetCells
+//if the mouse is out of the canvas reset the game
 canvas.cvs.addEventListener("mouseout", function (event) {
     if (isPlaying) {
-        resetCells();
+        failedTry();
     }
 });
 
@@ -103,7 +104,6 @@ function initGrid(difficulty) {
     timer.style.display = "block";
     currentDifficulty = difficulty;
     currentLevel = 0;
-    startTimer();
     canvas.cvs.attributes.width.value = 400;
     canvas.cvs.attributes.height.value = 400;
 }
@@ -125,7 +125,6 @@ function generateGame() {
     } else if (currentLevel > 15) {
         closeGame();
     }
-    drawnCells = [];
     fillCanvas("#fff");
     drawGrid("#000", currentDifficulty, currentDifficulty, 1);
     randomPath();
@@ -242,6 +241,15 @@ function resetCells() {
 
 
 /**
+ * If the user fails to solve the puzzle, the grid is reset to 5x5 and a new puzzle is generated.
+ */
+function failedTry() {
+    initGrid(5);
+    generateGame();
+}
+
+
+/**
  * It starts a timer that counts up in minutes and seconds, and displays the time in the timer element
  */
 function startTimer() {
@@ -284,25 +292,25 @@ function getRandomCell() {
  * draws it and adds it to the list of drawn cells
  */
 function randomPath() {
+    drawnCells = [];
     let pathCount = Math.floor(currentDifficulty * currentDifficulty / 3);
     console.log("Paths Drawn : ", pathCount);
 
     let startCell = getRandomCell();
-
     colorCell(startCell[0], startCell[1], cellPathColor);
-
     drawnCells.push(startCell);
+
     let n = 0;
     while (drawnCells.length < pathCount) {
         n++;
         let currentCell = drawnCells[drawnCells.length - 1];
         let neighbors = checkNeighbors(currentCell[0], currentCell[1]);
-        let neighbor = neighbors[Math.floor(Math.random() * neighbors.length)]; //todo: optimize this
+        let neighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
         if (!drawnCells.some(cell => cell[0] === neighbor[0] && cell[1] === neighbor[1])) {
             drawnCells.push(neighbor);
             colorCell(neighbor[0], neighbor[1], cellPathColor);
         }
-        if (n > pathCount*2){
+        if (n > pathCount * 2) {
             drawnCells = [];
             resetCells();
             randomPath();
@@ -350,3 +358,14 @@ function areArraysEqual(array1, array2) {
     const equals = (array1, array2) => JSON.stringify(array1) === JSON.stringify(array2);
     return equals(array1, array2);
 }
+
+function checkLastCell(row, column) {
+    if (userClickedCells.length > 1) {
+        let lastCell = userClickedCells[userClickedCells.length - 1];
+        if (lastCell[0] === row && lastCell[1] === column) {
+            return false;
+        }
+    }
+    return true;
+}
+
