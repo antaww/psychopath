@@ -144,7 +144,7 @@ function startGame() {
  * It checks if the name is valid and if it is, it starts the game.
  */
 function checkName() {
-    if (nicknameDiv.value !== "") {
+    if ((nicknameDiv.value !== "") && (nicknameDiv.value.length <= 15)) {
         nickname = nicknameDiv.value;
         nicknameDiv.classList.remove("bounceInDown");
         nicknameDiv.style.display = "none";
