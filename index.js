@@ -281,14 +281,18 @@ function colorCellOnClick(color) {
     let height = canvas.cvs.height / currentDifficulty;
     let row = cell[0];
     let column = cell[1];
+    if (!drawnCells.some(cell => cell[0] === row && cell[1] === column)) { //fail if the cell is not the path
+        failedTry();
+    }
     if (!userClickedCells.some(cell => cell[0] === row && cell[1] === column)) {
         canvas.ctx.fillStyle = color;
         canvas.ctx.fillRect(column * width, row * height, width, height);
         userClickedCells.push(cell);
-    } else {
+    } else { //fail if the cell is already clicked
         for (let i = 0; i < userClickedCells.length - 1; i++) {
             if(userClickedCells[i][0] === row && userClickedCells[i][1] === column) {
                 if(!levelFinished) {
+                    //todo: faire en sorte que le clic soit enlever pour éviter de cliquer sans faire exprès
                     failedTry();
                 }
             }
