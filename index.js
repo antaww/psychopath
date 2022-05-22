@@ -23,7 +23,8 @@ let currentDifficulty = 0; // 0 = not playing, 5 = easy, 6 = medium, 8 = hard
 let levelsCount = 15;
 let currentLevel = 0;
 
-let cellPathColor = "#9a7999"
+let cellPathColor = "rgba(114,143,186,0.3)"
+let userCellsColor = "rgba(189,94,94,0.2)";
 let nickname = "";
 
 window.addEventListener("load", updateScoreboard);
@@ -82,7 +83,7 @@ canvas.cvs.addEventListener("mousemove", function (event) {
             let x = event.offsetX;
             let y = event.offsetY;
             getCurrentCell(x, y);
-            colorCellOnClick("#000")
+            colorCellOnClick(userCellsColor)
             if (userClickedCells.length === drawnCells.length) {
                 console.log("userClickedCells", userClickedCells);
                 console.log("drawnCells", drawnCells);
