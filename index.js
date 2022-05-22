@@ -100,7 +100,7 @@ canvas.cvs.addEventListener("mousemove", function (event) {
 
 //if the mouse is out of the canvas reset the game
 canvas.cvs.addEventListener("mouseout", function (event) {
-    if (isPlaying) {
+    if (isPlaying && isClicking) {
         failedTry();
     }
 });
@@ -292,7 +292,6 @@ function colorCellOnClick(color) {
         for (let i = 0; i < userClickedCells.length - 1; i++) {
             if(userClickedCells[i][0] === row && userClickedCells[i][1] === column) {
                 if(!levelFinished) {
-                    //todo: faire en sorte que le clic soit enlever pour éviter de cliquer sans faire exprès
                     failedTry();
                 }
             }
