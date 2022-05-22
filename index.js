@@ -489,7 +489,6 @@ function updateScoreboard() {
         for (let i = 0; i < localStorageArray.length; i++) {
             scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${localStorageArray[i][1]} seconds</div>`;
         }
-        //add to scoreboardHTML the position of the current player
         let currentPlayerPosition = localStorageArray.findIndex(element => element[0] === nickname);
         if (currentPlayerPosition !== -1) {
             scoreboardHTML += `<div class="your-position">Your position : ${currentPlayerPosition + 1} with ${timerValue} seconds</div>`;
