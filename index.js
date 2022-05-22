@@ -25,8 +25,8 @@ let currentDifficulty = 0; // 0 = not playing, 5 = easy, 6 = medium, 8 = hard
 let levelsCount = 15;
 let currentLevel = 0;
 
-let cellPathColor = "rgba(114,143,186,0.3)"
-let userCellsColor = "rgba(189,94,94,0.2)";
+let cellPathColor = "rgba(252,225,18,0.3)"
+let userCellsColor = "rgba(243,75,47,0.2)";
 let nickname = "";
 
 window.addEventListener("load", updateScoreboard);
