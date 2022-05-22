@@ -474,20 +474,20 @@ function hideButtons() {
  */
 function updateScoreboard() {
     let localStorageArray = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        localStorageArray.push([localStorage.key(i), localStorage.getItem(localStorage.key(i))]);
-    }
-
-    localStorageArray.sort(function (a, b) {
-        return a[1] - b[1];
-    });
-
     let scoreboardHTML = "Scoreboard";
-
-    for (let i = 0; i < localStorageArray.length; i++) {
-        scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${localStorageArray[i][1]} seconds</div>`;
+    if (localStorage.length === 0) {
+        scoreboardHTML += `<div class="score">No scores yet</div>`;
+    } else {
+        for (let i = 0; i < localStorage.length; i++) {
+            localStorageArray.push([localStorage.key(i), localStorage.getItem(localStorage.key(i))]);
+        }
+        localStorageArray.sort(function (a, b) {
+            return a[1] - b[1];
+        });
+        for (let i = 0; i < localStorageArray.length; i++) {
+            scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${localStorageArray[i][1]} seconds</div>`;
+        }
     }
-
     scoreboard.innerHTML = scoreboardHTML;
 }
 
