@@ -4,6 +4,8 @@ let timer = document.querySelector(".timer");
 let levelDiv = document.querySelector(".level");
 let failCross = document.querySelector(".cross");
 let nicknameDiv = document.querySelector("#nickname");
+let validate = document.querySelector("#validate");
+let nicknameContainer = document.querySelector(".nickname-container");
 let scoreboard = document.querySelector(".scoreboard");
 
 let canvas = {
@@ -29,37 +31,41 @@ let nickname = "";
 
 window.addEventListener("load", updateScoreboard);
 
-playBtn.addEventListener("click", function (event) {
+playBtn.addEventListener("click", function () {
     timer.style.display = "none";
     timer.classList.remove("bounceInDown");
     playBtn.classList.add("bounceOutDown");
     setTimeout(function () {
         playBtn.classList.remove("bounceOutDown");
         playBtn.style.display = "none";
-        nicknameDiv.style.display = "block";
-        nicknameDiv.classList.add("bounceInDown");
+        nicknameContainer.style.display = "flex";
+        nicknameContainer.classList.add("bounceInDown");
         setTimeout(function () {
-            nicknameDiv.classList.remove("bounceInDown");
+            nicknameContainer.classList.remove("bounceInDown");
         }, 1000);
     }, 1000);
 });
 
 window.addEventListener("keydown", function (event) {
     if (event.keyCode === 13) {
-        if (nicknameDiv.style.display === "block") {
+        if (nicknameContainer.style.display === "flex") {
             checkName();
         }
     }
 });
 
+validate.addEventListener("click", function () {
+    checkName();
+});
 
-window.addEventListener("mousedown", function (event) {
+
+window.addEventListener("mousedown", function () {
     if (isPlaying) {
         isClicking = true;
     }
 });
 
-window.addEventListener("mouseup", function (event) {
+window.addEventListener("mouseup", function () {
     if (isPlaying) {
         if (levelFinished) {
             if (currentLevel > levelsCount) {
@@ -99,14 +105,14 @@ canvas.cvs.addEventListener("mousemove", function (event) {
 });
 
 //if the mouse is out of the canvas reset the game
-canvas.cvs.addEventListener("mouseout", function (event) {
+canvas.cvs.addEventListener("mouseout", function () {
     if (isPlaying && isClicking) {
         failedTry();
     }
 });
 
 
-resetBtn.addEventListener("click", function (event) {
+resetBtn.addEventListener("click", function () {
     console.clear();
     stopTimer();
     hideButtons();
@@ -147,13 +153,13 @@ function startGame() {
 function checkName() {
     if ((nicknameDiv.value !== "") && (nicknameDiv.value.length <= 15)) {
         nickname = nicknameDiv.value;
-        nicknameDiv.classList.remove("bounceInDown");
-        nicknameDiv.style.display = "none";
+        nicknameContainer.style.display = "none";
+        nicknameContainer.classList.remove("bounceInDown");
         startGame();
     } else {
-        nicknameDiv.classList.add("shake");
+        nicknameContainer.classList.add("shake");
         setTimeout(function () {
-            nicknameDiv.classList.remove("shake");
+            nicknameContainer.classList.remove("shake");
         }, 0.5 * 1000);
     }
 }
@@ -270,7 +276,6 @@ function getCurrentCell(x, y) {
 }
 
 
-
 /**
  * If the user clicks on a cell that hasn't been clicked yet, then fill that cell with the color that was passed in
  * @param color - the color of the cell that the user clicked on
@@ -290,8 +295,8 @@ function colorCellOnClick(color) {
         userClickedCells.push(cell);
     } else { //fail if the cell is already clicked
         for (let i = 0; i < userClickedCells.length - 1; i++) {
-            if(userClickedCells[i][0] === row && userClickedCells[i][1] === column) {
-                if(!levelFinished) {
+            if (userClickedCells[i][0] === row && userClickedCells[i][1] === column) {
+                if (!levelFinished) {
                     failedTry();
                 }
             }
@@ -487,7 +492,7 @@ function updateScoreboard() {
         }
         for (let i = 0; i < localStorageArray.length; i++) {
             let time = localStorageArray[i][1];
-            if(localStorageArray[i][1] >= 60){
+            if (localStorageArray[i][1] >= 60) {
                 time = Math.floor(localStorageArray[i][1] / 60) + "min " + (localStorageArray[i][1] % 60);
             }
             scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${time} seconds</div>`;
