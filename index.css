@@ -53,6 +53,10 @@ body {
     cursor: pointer;
 }
 
+.cross {
+    cursor: default !important;
+}
+
 .game-button:hover(:not(.purple)) {
     top: 2px;
     box-shadow: 0 4px 0 #266b91, 0 6px 1px 1px rgba(0, 0, 0, .3), 0 8px 0 5px #12517d, 0 10px 0 5px #1a6b9a, 0 13px 0 5px #0c405e, 0 13px 1px 6px rgba(0, 0, 0, .3);
