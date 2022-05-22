@@ -270,9 +270,10 @@ function getCurrentCell(x, y) {
 }
 
 
+
 /**
- * It takes a color and fills the cell that the user clicked on with that color
- * @param color - the color to fill the cell with
+ * If the user clicks on a cell that hasn't been clicked yet, then fill that cell with the color that was passed in
+ * @param color - the color of the cell that the user clicked on
  */
 function colorCellOnClick(color) {
     let cell = getCurrentCell(event.offsetX, event.offsetY);
@@ -280,10 +281,18 @@ function colorCellOnClick(color) {
     let height = canvas.cvs.height / currentDifficulty;
     let row = cell[0];
     let column = cell[1];
-    canvas.ctx.fillStyle = color;
-    canvas.ctx.fillRect(column * width, row * height, width, height);
     if (!userClickedCells.some(cell => cell[0] === row && cell[1] === column)) {
+        canvas.ctx.fillStyle = color;
+        canvas.ctx.fillRect(column * width, row * height, width, height);
         userClickedCells.push(cell);
+    } else {
+        for (let i = 0; i < userClickedCells.length - 1; i++) {
+            if(userClickedCells[i][0] === row && userClickedCells[i][1] === column) {
+                if(!levelFinished) {
+                    failedTry();
+                }
+            }
+        }
     }
 }
 
@@ -434,21 +443,6 @@ function areArraysEqual(array1, array2) {
     return equals(array1, array2);
 }
 
-/**
- * If the user has clicked more than one cell, and the last cell clicked is the same as the current cell, then return false
- * @param row - the row of the cell that was clicked
- * @param column - the column of the cell that was clicked
- * @returns a boolean value.
- */
-function checkLastCell(row, column) {
-    if (userClickedCells.length > 1) {
-        let lastCell = userClickedCells[userClickedCells.length - 1];
-        if (lastCell[0] === row && lastCell[1] === column) {
-            return false;
-        }
-    }
-    return true;
-}
 
 /**
  * It sets the width and height of the canvas to 0
@@ -491,5 +485,3 @@ function updateScoreboard() {
     }
     scoreboard.innerHTML = scoreboardHTML;
 }
-
-
