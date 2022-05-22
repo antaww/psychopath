@@ -486,13 +486,18 @@ function updateScoreboard() {
             localStorageArray.length = 5;
         }
         for (let i = 0; i < localStorageArray.length; i++) {
-            scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${localStorageArray[i][1]} seconds</div>`;
+            let time = localStorageArray[i][1];
+            if(localStorageArray[i][1] >= 60){
+                time = Math.floor(localStorageArray[i][1] / 60) + "min " + (localStorageArray[i][1] % 60);
+            }
+            scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${time} seconds</div>`;
         }
         let currentPlayerPosition = localStorageArray.findIndex(element => element[0] === nickname);
+        let totalPlayers = localStorage.length;
+        console.log(currentPlayerPosition);
         if (currentPlayerPosition !== -1) {
-            scoreboardHTML += `<div class="your-position">Your position : ${currentPlayerPosition + 1} with ${timerValue} seconds</div>`;
+            scoreboardHTML += `<div class="your-position">Your position : ${currentPlayerPosition + 1}/${totalPlayers} with ${timerValue} seconds</div>`;
         }
-
     }
     scoreboard.innerHTML = scoreboardHTML;
 }
