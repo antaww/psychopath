@@ -483,9 +483,18 @@ function updateScoreboard() {
         localStorageArray.sort(function (a, b) {
             return a[1] - b[1];
         });
+        if (localStorageArray.length > 5) {
+            localStorageArray.length = 5;
+        }
         for (let i = 0; i < localStorageArray.length; i++) {
             scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${localStorageArray[i][1]} seconds</div>`;
         }
+        //add to scoreboardHTML the position of the current player
+        let currentPlayerPosition = localStorageArray.findIndex(element => element[0] === nickname);
+        if (currentPlayerPosition !== -1) {
+            scoreboardHTML += `<div class="your-position">Your position : ${currentPlayerPosition + 1} with ${timerValue} seconds</div>`;
+        }
+
     }
     scoreboard.innerHTML = scoreboardHTML;
 }
