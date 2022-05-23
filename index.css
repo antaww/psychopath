@@ -187,6 +187,11 @@ body {
     width: 28px;
     height: 28px;
     margin: 2px;
+    transition: all .3s;
+}
+
+.swatch:hover {
+    transform: scale(1.1);
 }
 
 .color-list {
