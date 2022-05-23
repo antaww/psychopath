@@ -210,3 +210,10 @@ body {
 .unselected {
     border: 2px solid transparent;
 }
+
+.color-list-title {
+    font-family: 'Carter One', sans-serif;
+    font-size: 15px;
+    color: #fff !important;
+    text-shadow: 2px 2px 1px #0066a2, -2px 2px 1px #0066a2, 2px -2px 1px #0066a2, -2px -2px 1px #0066a2, 0px 2px 1px #0066a2, 0px -2px 1px #0066a2, 0px 4px 1px #004a87, 2px 4px 1px #004a87, -2px 4px 1px #004a87;
+}
