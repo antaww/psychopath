@@ -7,6 +7,8 @@ let nicknameDiv = document.querySelector("#nickname");
 let validate = document.querySelector("#validate");
 let nicknameContainer = document.querySelector(".nickname-container");
 let scoreboard = document.querySelector(".scoreboard");
+let colorPicker = document.querySelectorAll(".swatch");
+let colorContainer = document.querySelector(".color-list");
 
 let canvas = {
     cvs: document.querySelector(".grid"),
@@ -40,8 +42,11 @@ playBtn.addEventListener("click", function () {
         playBtn.style.display = "none";
         nicknameContainer.style.display = "flex";
         nicknameContainer.classList.add("bounceInDown");
+        colorContainer.style.display = "flex";
+        colorContainer.classList.add("bounceInDown");
         setTimeout(function () {
             nicknameContainer.classList.remove("bounceInDown");
+            colorContainer.classList.remove("bounceInDown");
         }, 1000);
     }, 1000);
 });
@@ -132,6 +137,18 @@ resetBtn.addEventListener("click", function () {
     }, 1000);
 });
 
+colorPicker.forEach(function (color) {
+    color.addEventListener("click", function () {
+        colorPicker.forEach(function (color) {
+            color.classList.remove("selected");
+            color.classList.add("unselected");
+        });
+        userCellsColor = color.getAttribute("data-color");
+        color.classList.add("selected");
+        color.classList.remove("unselected");
+    });
+});
+
 
 ///////////
 // UTILS //
@@ -155,11 +172,15 @@ function checkName() {
         nickname = nicknameDiv.value;
         nicknameContainer.style.display = "none";
         nicknameContainer.classList.remove("bounceInDown");
+        colorContainer.style.display = "none";
+        colorContainer.classList.remove("bounceInDown");
         startGame();
     } else {
         nicknameContainer.classList.add("shake");
+        colorContainer.classList.add("shake");
         setTimeout(function () {
             nicknameContainer.classList.remove("shake");
+            colorContainer.classList.remove("shake");
         }, 0.5 * 1000);
     }
 }
@@ -336,6 +357,10 @@ function resetCells() {
  * If the user fails to solve the puzzle, the grid is reset to 5x5 and a new puzzle is generated.
  */
 function failedTry() {
+    levelDiv.classList.add("shake");
+    setTimeout(function () {
+        levelDiv.classList.remove("shake");
+    }, 0.5 * 1000);
     initGrid(5);
     generateGame();
 }

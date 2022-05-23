@@ -180,3 +180,28 @@ body {
     font-size: 15px;
     color: rgba(255, 255, 255, 0.49) !important;
 }
+
+.swatch {
+    border-radius: 4px;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    margin: 2px;
+}
+
+.color-list {
+    max-width: 142px;
+    flex-flow: wrap;
+    height: fit-content;
+    padding: 6px;
+    border-radius: 4px;
+    background-color: #00000082;
+}
+
+.selected {
+    border: 2px solid #ffffff;
+}
+
+.unselected {
+    border: 2px solid transparent;
+}
