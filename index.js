@@ -26,6 +26,7 @@ let timerValue = 0;
 let currentDifficulty = 0; // 0 = not playing, 5 = easy, 6 = medium, 8 = hard
 let levelsCount = 15;
 let currentLevel = 0;
+let userTimeScoreboard = 0;
 
 let cellPathColor = "rgba(252,225,18,0.3)"
 let userCellsColor = "rgba(243,75,47,0.2)";
@@ -517,6 +518,7 @@ function updateScoreboard() {
         }
         for (let i = 0; i < localStorageArray.length; i++) {
             let time = localStorageArray[i][1];
+            userTimeScoreboard = time;
             if (localStorageArray[i][1] >= 60) {
                 time = Math.floor(localStorageArray[i][1] / 60) + "min " + (localStorageArray[i][1] % 60);
             }
@@ -526,7 +528,7 @@ function updateScoreboard() {
         let totalPlayers = localStorage.length;
         console.log(currentPlayerPosition);
         if (currentPlayerPosition !== -1) {
-            scoreboardHTML += `<div class="your-position">Your position : ${currentPlayerPosition + 1}/${totalPlayers} with ${timerValue} seconds</div>`;
+            scoreboardHTML += `<div class="your-position">Your position : ${currentPlayerPosition + 1}/${totalPlayers} with ${userTimeScoreboard} seconds</div>`;
         }
     }
     scoreboard.innerHTML = scoreboardHTML;
