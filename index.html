@@ -9,7 +9,6 @@
 <body>
 <div class="container">
     <div class="scoreboard rubberBand">Scoreboard</div>
-    <div class="timer difficulty-button game-button purple" style="display: none"></div>
     <div class="difficulty">
         <button class="difficulty-button game-button green bounceInDown" id="play">Play</button>
         <div class="nickname-container" style="display: none">
@@ -32,7 +31,11 @@
             <div class="swatch unselected" data-color="#F2D7B5D1" style="background: #F2D7B5D9"></div>
             <div class="swatch unselected" data-color="#000000D1" style="background: #000000D9"></div>
         </div>
-        <button class="difficulty-button game-button red" id="reset" style="display: none">Reset</button>
+        <div class="inGameButtons">
+            <div class="timer difficulty-button game-button purple" style="display: none"></div>
+            <button class="difficulty-button game-button orange" id="lobby" style="display: none">Lobby</button>
+            <button class="difficulty-button game-button red" id="reset" style="display: none">Reset</button>
+        </div>
     </div>
     <div class="game-info">
         <div class="level difficulty-button game-button yellow" style="display: none"></div>

@@ -1,4 +1,5 @@
 let playBtn = document.querySelector("#play");
+let lobbyBtn = document.querySelector("#lobby");
 let resetBtn = document.querySelector("#reset");
 let timer = document.querySelector(".timer");
 let levelDiv = document.querySelector(".level");
@@ -117,8 +118,14 @@ canvas.cvs.addEventListener("mouseout", function () {
     }
 });
 
-
 resetBtn.addEventListener("click", function () {
+    failedTry();
+    stopTimer();
+    startTimer();
+});
+
+
+lobbyBtn.addEventListener("click", function () {
     console.clear();
     stopTimer();
     hideButtons();
@@ -192,6 +199,7 @@ function checkName() {
 function initGrid(difficulty) {
     playBtn.style.display = "none";
     levelDiv.style.display = "block";
+    lobbyBtn.style.display = "block";
     resetBtn.style.display = "block";
     isPlaying = true;
     timer.style.display = "block";
@@ -238,6 +246,7 @@ function generateGame() {
 function closeGame() {
     playBtn.style.display = "block";
     levelDiv.style.display = "none";
+    lobbyBtn.style.display = "none";
     resetBtn.style.display = "none";
     timer.classList.add("bounceInDown")
     isPlaying = false;
@@ -492,6 +501,7 @@ function hideCanvas() {
 function hideButtons() {
     playBtn.style.display = "none";
     levelDiv.style.display = "none";
+    lobbyBtn.style.display = "none";
     resetBtn.style.display = "none";
     timer.style.display = "none";
 }
