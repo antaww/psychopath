@@ -97,11 +97,8 @@ canvas.cvs.addEventListener("mousemove", function (event) {
             getCurrentCell(x, y);
             colorCellOnClick(userCellsColor)
             if (userClickedCells.length === drawnCells.length) {
-                console.log("userClickedCells", userClickedCells);
-                console.log("drawnCells", drawnCells);
                 if (areArraysEqual(userClickedCells, drawnCells)) {
                     levelFinished = true;
-                    console.log("Level finished");
                 } else {
                     userClickedCells = [];
                 }
@@ -420,7 +417,6 @@ function getRandomCell() {
 function randomPath() {
     drawnCells = [];
     let pathCount = Math.floor(currentDifficulty * currentDifficulty / 3);
-    console.log("Paths Drawn : ", pathCount);
 
     let startCell = getRandomCell();
     colorCell(startCell[0], startCell[1], cellPathColor);
@@ -443,7 +439,6 @@ function randomPath() {
             return;
         }
     }
-    console.log("Path : ", drawnCells, "Length : ", drawnCells.length);
 }
 
 
@@ -522,25 +517,29 @@ function updateScoreboard() {
         localStorageArray.sort(function (a, b) {
             return a[1] - b[1];
         });
+        let scoreboardDisplayLimit;
         if (localStorageArray.length > 5) {
-            localStorageArray.length = 5;
+            scoreboardDisplayLimit = 5;
+        } else {
+            scoreboardDisplayLimit = localStorageArray.length;
         }
-        for (let i = 0; i < localStorageArray.length; i++) {
+        for (let i = 0; i < scoreboardDisplayLimit; i++) {
             let time = localStorageArray[i][1];
             if (localStorageArray[i][1] >= 60) {
                 time = Math.floor(localStorageArray[i][1] / 60) + "min " + (localStorageArray[i][1] % 60);
             }
             scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${time} seconds</div>`;
         }
+        console.log(localStorageArray);
         let currentPlayerPosition = localStorageArray.findIndex(element => element[0] === nickname);
         let totalPlayers = localStorage.length;
         console.log(currentPlayerPosition);
         if (currentPlayerPosition !== -1) {
-            let timerInMinutes = timerValue;
-            if (timerValue >= 60) {
-                timerInMinutes = Math.floor(timerValue / 60) + "min " + (timerValue % 60);
+            let userTime = localStorage.getItem(nickname);
+            if (userTime >= 60) {
+                userTime = Math.floor(userTime / 60) + "min " + (userTime % 60);
             }
-            scoreboardHTML += `<div class="your-position">Your position : ${currentPlayerPosition + 1}/${totalPlayers} with ${timerInMinutes} seconds</div>`;
+            scoreboardHTML += `<div class="your-position">Your position : ${currentPlayerPosition + 1}/${totalPlayers} with ${userTime} seconds</div>`;
         }
     }
     scoreboard.innerHTML = scoreboardHTML;
