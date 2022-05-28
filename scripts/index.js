@@ -52,14 +52,6 @@ playBtn.addEventListener("click", function () {
     }, 1000);
 });
 
-window.addEventListener("keydown", function (event) {
-    if (event.keyCode === 13) {
-        if (nicknameContainer.style.display === "flex") {
-            checkName();
-        }
-    }
-});
-
 validate.addEventListener("click", function () {
     checkName();
 });
