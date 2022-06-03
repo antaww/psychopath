@@ -2,15 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Jeu chemin</title>
+    <title>Psychopath</title>
     <link rel="stylesheet" href="../styles/index.css">
+    <link rel="stylesheet" href="../styles/buttons.css">
+    <link rel="stylesheet" href="../styles/animations.css">
     <script defer src="../scripts/index.js"></script>
 </head>
 <body>
 <div class="container">
     <div class="scoreboard rubberBand">Scoreboard</div>
     <div class="difficulty">
-        <button class="difficulty-button game-button green bounceInDown" id="play">Play</button>
+        <div class="buttons-container">
+            <button class="difficulty-button game-button green bounceInDown" id="playSpeedrun">Speedrun</button>
+            <button class="difficulty-button game-button green bounceInDown" id="playInfinite">Infinite</button>
+        </div>
         <div class="nickname-container" style="display: none">
             <input type="text" class="difficulty-button game-button purple" id="nickname"
                    placeholder="Enter your nickname">

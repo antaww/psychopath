@@ -1,0 +1,19 @@
+.bounceInDown {
+    animation-name: bounceInDown;
+    animation-duration: 1s;
+    animation-fill-mode: both;
+}
+
+.bounceOutDown {
+    animation-name: bounceOutDown;
+    animation-duration: 1s;
+    animation-fill-mode: both;
+}
+
+.shake {
+    animation: headShake 0.5s linear alternate;
+}
+
+.rubberBand {
+    animation: rubberBand 1s both;
+}

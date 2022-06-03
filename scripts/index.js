@@ -1,4 +1,6 @@
-let playBtn = document.querySelector("#play");
+let buttonsContainer = document.querySelector(".buttons-container");
+let playSpeedrun = document.querySelector("#playSpeedrun");
+let playInfinite = document.querySelector("#playInfinite");
 let lobbyBtn = document.querySelector("#lobby");
 let resetBtn = document.querySelector("#reset");
 let timer = document.querySelector(".timer");
@@ -34,22 +36,8 @@ let nickname = "";
 
 window.addEventListener("load", updateScoreboard);
 
-playBtn.addEventListener("click", function () {
-    timer.style.display = "none";
-    timer.classList.remove("bounceInDown");
-    playBtn.classList.add("bounceOutDown");
-    setTimeout(function () {
-        playBtn.classList.remove("bounceOutDown");
-        playBtn.style.display = "none";
-        nicknameContainer.style.display = "flex";
-        nicknameContainer.classList.add("bounceInDown");
-        colorContainer.style.display = "flex";
-        colorContainer.classList.add("bounceInDown");
-        setTimeout(function () {
-            nicknameContainer.classList.remove("bounceInDown");
-            colorContainer.classList.remove("bounceInDown");
-        }, 1000);
-    }, 1000);
+playSpeedrun.addEventListener("click", function () {
+    UsernameDisplay();
 });
 
 validate.addEventListener("click", function () {
@@ -151,6 +139,28 @@ colorPicker.forEach(function (color) {
 ///////////
 
 /**
+ * It hides the timer and buttons, then shows the nickname and color containers
+ */
+function UsernameDisplay() {
+    timer.style.display = "none";
+    timer.classList.remove("bounceInDown");
+    buttonsContainer.classList.add("bounceOutDown");
+    setTimeout(function () {
+        buttonsContainer.classList.remove("bounceOutDown");
+        buttonsContainer.style.display = "none";
+        nicknameContainer.style.display = "flex";
+        nicknameContainer.classList.add("bounceInDown");
+        colorContainer.style.display = "flex";
+        colorContainer.classList.add("bounceInDown");
+        setTimeout(function () {
+            nicknameContainer.classList.remove("bounceInDown");
+            colorContainer.classList.remove("bounceInDown");
+        }, 1000);
+    }, 1000);
+}
+
+
+/**
  * `startGame()` clears the console, initializes the grid, starts the timer, and generates the game
  */
 function startGame() {
@@ -185,7 +195,7 @@ function checkName() {
  * It sets up the grid
  */
 function initGrid(difficulty) {
-    playBtn.style.display = "none";
+    buttonsContainer.style.display = "none";
     levelDiv.style.display = "block";
     lobbyBtn.style.display = "block";
     resetBtn.style.display = "block";
@@ -232,7 +242,7 @@ function generateGame() {
  * It closes the game by hiding the play button, stopping the timer, and setting the canvas width and height to 0
  */
 function closeGame() {
-    playBtn.style.display = "block";
+    buttonsContainer.style.display = "flex";
     levelDiv.style.display = "none";
     lobbyBtn.style.display = "none";
     resetBtn.style.display = "none";
@@ -485,7 +495,7 @@ function hideCanvas() {
  * It hides buttons (play, level, reset & timer).
  */
 function hideButtons() {
-    playBtn.style.display = "none";
+    buttonsContainer.style.display = "none";
     levelDiv.style.display = "none";
     lobbyBtn.style.display = "none";
     resetBtn.style.display = "none";
@@ -522,10 +532,8 @@ function updateScoreboard() {
             }
             scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${time} seconds</div>`;
         }
-        console.log(localStorageArray);
         let currentPlayerPosition = localStorageArray.findIndex(element => element[0] === nickname);
         let totalPlayers = localStorage.length;
-        console.log(currentPlayerPosition);
         if (currentPlayerPosition !== -1) {
             let userTime = localStorage.getItem(nickname);
             if (userTime >= 60) {
