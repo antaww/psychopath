@@ -21,6 +21,7 @@ let canvas = {
 let isPlaying = false;
 let isClicking = false;
 let levelFinished = false;
+let timerRunning = false;
 
 let drawnCells = [];
 let userClickedCells = [];
@@ -33,17 +34,23 @@ let currentLevel = 0;
 let cellPathColor = "rgba(252,225,18,0.3)"
 let userCellsColor = "rgba(243,75,47,0.2)";
 let nickname = "";
+let gameMode = "";
 
 window.addEventListener("load", updateScoreboard);
 
 playSpeedrun.addEventListener("click", function () {
+    gameMode = "speedrun";
+    UsernameDisplay();
+});
+
+playInfinite.addEventListener("click", function () {
+    gameMode = "infinite";
     UsernameDisplay();
 });
 
 validate.addEventListener("click", function () {
     checkName();
 });
-
 
 window.addEventListener("mousedown", function () {
     if (isPlaying) {
@@ -54,9 +61,11 @@ window.addEventListener("mousedown", function () {
 window.addEventListener("mouseup", function () {
     if (isPlaying) {
         if (levelFinished) {
-            if (currentLevel > levelsCount) {
-                closeGame();
-                return;
+            if (gameMode === "speedrun") {
+                if (currentLevel > levelsCount) {
+                    closeGame();
+                    return;
+                }
             }
             levelFinished = false;
             isClicking = false;
@@ -67,7 +76,6 @@ window.addEventListener("mouseup", function () {
         isClicking = false;
     }
 });
-
 
 canvas.cvs.addEventListener("mousemove", function (event) {
     if (isClicking) {
@@ -102,8 +110,9 @@ resetBtn.addEventListener("click", function () {
 
 
 lobbyBtn.addEventListener("click", function () {
-    console.clear();
-    stopTimer();
+    if (gameMode === "speedrun") {
+        stopTimer();
+    }
     hideButtons();
     hideCanvas();
     failCross.style.display = "block";
@@ -161,12 +170,13 @@ function UsernameDisplay() {
 
 
 /**
- * `startGame()` clears the console, initializes the grid, starts the timer, and generates the game
+ * `startGame()` initializes the grid, starts the timer, and generates the game
  */
 function startGame() {
-    console.clear();
     initGrid(5);
-    startTimer();
+    if (gameMode === "speedrun") {
+        startTimer();
+    }
     generateGame();
 }
 
@@ -199,8 +209,10 @@ function initGrid(difficulty) {
     levelDiv.style.display = "block";
     lobbyBtn.style.display = "block";
     resetBtn.style.display = "block";
+    if (gameMode === "speedrun") {
+        timer.style.display = "block";
+    }
     isPlaying = true;
-    timer.style.display = "block";
     currentDifficulty = difficulty;
     currentLevel = 0;
     canvas.cvs.attributes.width.value = 400;
@@ -215,22 +227,27 @@ function generateGame() {
     userClickedCells = [];
     currentLevel += 1;
     levelDiv.innerHTML = "Level " + currentLevel;
-    if (currentLevel <= 5) {
-        currentDifficulty = 5;
-    } else if (currentLevel > 5 && currentLevel <= 10) {
-        currentDifficulty = 6;
-    } else if (currentLevel > 10 && currentLevel <= 15) {
-        currentDifficulty = 8;
-    } else if (currentLevel > 15) {
-        if (localStorage.getItem(nickname) !== null) {
-            if (timerValue < localStorage.getItem(nickname)) {
+    if (gameMode === "speedrun") {
+        if (currentLevel <= 5) {
+            currentDifficulty = 5;
+        } else if (currentLevel > 5 && currentLevel <= 10) {
+            currentDifficulty = 6;
+        } else if (currentLevel > 10 && currentLevel <= 15) {
+            currentDifficulty = 8;
+        } else if (currentLevel > 15) {
+            if (localStorage.getItem(nickname) !== null) {
+                if (timerValue < localStorage.getItem(nickname)) {
+                    localStorage.setItem(nickname, timerValue);
+                }
+            } else {
                 localStorage.setItem(nickname, timerValue);
             }
-        } else {
-            localStorage.setItem(nickname, timerValue);
+            updateScoreboard();
+            closeGame();
         }
-        updateScoreboard();
-        closeGame();
+    } else if (gameMode === "infinite") {
+        // currentDifficulty = Math.floor(Math.random() * (10 - 4 + 1)) + 4;
+        currentDifficulty = 3;
     }
     fillCanvas("#fff");
     drawGrid("#000", currentDifficulty, currentDifficulty, 1);
@@ -249,6 +266,7 @@ function closeGame() {
     timer.classList.add("bounceInDown")
     isPlaying = false;
     nickname = "";
+    gameMode = "";
     stopTimer();
     hideCanvas();
 }
@@ -369,6 +387,9 @@ function failedTry() {
     setTimeout(function () {
         levelDiv.classList.remove("shake");
     }, 0.5 * 1000);
+    if (gameMode === "infinite") {
+        console.log("Total level completed:",currentLevel-1);
+    }
     initGrid(5);
     generateGame();
 }
@@ -378,6 +399,7 @@ function failedTry() {
  * It starts a timer that counts up in minutes and seconds, and displays the time in the timer element
  */
 function startTimer() {
+    timerRunning = true;
     timerValue = 0;
     timer.innerHTML = "00:00";
     timerInterval = setInterval(function () {
@@ -398,7 +420,10 @@ function startTimer() {
  * Stop the timer by clearing the timer interval.
  */
 function stopTimer() {
-    clearInterval(timerInterval);
+    if (timerRunning) {
+        clearInterval(timerInterval);
+    }
+    timerRunning = false;
 }
 
 /**
