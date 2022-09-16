@@ -231,11 +231,11 @@ function generateGame() {
     if (gameMode === "speedrun") {
         if (currentLevel <= 5) {
             currentDifficulty = 5;
-            // } else if (currentLevel > 5 && currentLevel <= 10) {
-            //     currentDifficulty = 6;
-            // } else if (currentLevel > 10 && currentLevel <= 15) {
-            //     currentDifficulty = 8;
-        } else if (currentLevel > 5) {
+            } else if (currentLevel > 5 && currentLevel <= 10) {
+                currentDifficulty = 6;
+            } else if (currentLevel > 10 && currentLevel <= 15) {
+                currentDifficulty = 8;
+        } else if (currentLevel > 15) {
             if (localStorage.getItem("speedrun " + nickname) !== null) {
                 if (timerValue < localStorage.getItem("speedrun " + nickname)) {
                     localStorage.setItem("speedrun " + nickname, timerValue);
