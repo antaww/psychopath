@@ -184,7 +184,7 @@ function startGame() {
  * It checks if the name is valid and if it is, it starts the game.
  */
 function checkName() {
-    if ((nicknameDiv.value !== "") && (nicknameDiv.value.length <= 15)) {
+    if ((nicknameDiv.value !== "") && (nicknameDiv.value.length <= 15) && (nicknameDiv.value !== "speedrun") && (nicknameDiv.value !== "infinite")) {
         nickname = nicknameDiv.value;
         nicknameContainer.style.display = "none";
         nicknameContainer.classList.remove("bounceInDown");
@@ -227,6 +227,7 @@ function generateGame() {
     userClickedCells = [];
     currentLevel += 1;
     levelDiv.innerHTML = "Level " + currentLevel;
+    updateScoreboard();
     if (gameMode === "speedrun") {
         if (currentLevel <= 5) {
             currentDifficulty = 5;
@@ -388,6 +389,14 @@ function failedTry() {
     }, 0.5 * 1000);
     if (gameMode === "infinite") {
         console.log("Total level completed:", currentLevel - 1);
+        if (localStorage.getItem("infinite " + nickname) !== null) {
+            if (currentLevel-1 > localStorage.getItem("infinite " + nickname)) {
+                localStorage.setItem("infinite " + nickname, currentLevel-1);
+            }
+        } else {
+            localStorage.setItem("infinite " + nickname, currentLevel-1);
+        }
+        updateScoreboard();
     }
     initGrid(5);
     generateGame();
@@ -534,38 +543,74 @@ function hideButtons() {
 function updateScoreboard() {
     let localStorageArray = [];
     let scoreboardHTML = "Scoreboard";
-    if (localStorage.length === 0) {
-        scoreboardHTML += `<div class="score">No scores yet</div>`;
+    if (gameMode === "") {
+        scoreboard.style.display = "none";
     } else {
-        for (let i = 0; i < localStorage.length; i++) {
-            if (localStorage.key(i).includes("speedrun")) {
-                localStorageArray.push([localStorage.key(i).slice(9), localStorage.getItem(localStorage.key(i))]);
-            }
-        }
-        localStorageArray.sort(function (a, b) {
-            return a[1] - b[1];
-        });
-        let scoreboardDisplayLimit;
-        if (localStorageArray.length > 5) {
-            scoreboardDisplayLimit = 5;
+        scoreboard.style.display = "flex";
+    }
+    if (gameMode === "speedrun") {
+        if (Object.keys(localStorage).filter(key => key.includes("speedrun")).length === 0) {
+            scoreboardHTML += `<div class="score">No scores yet</div>`;
         } else {
-            scoreboardDisplayLimit = localStorageArray.length;
-        }
-        for (let i = 0; i < scoreboardDisplayLimit; i++) {
-            let time = localStorageArray[i][1];
-            if (localStorageArray[i][1] >= 60) {
-                time = Math.floor(localStorageArray[i][1] / 60) + "min " + (localStorageArray[i][1] % 60);
+            for (let i = 0; i < localStorage.length; i++) {
+                if (localStorage.key(i).includes("speedrun")) {
+                    localStorageArray.push([localStorage.key(i).slice(9), localStorage.getItem(localStorage.key(i))]);
+                }
             }
-            scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${time} seconds</div>`;
-        }
-        let currentPlayerPosition = localStorageArray.findIndex(element => element[0] === "speedrun " + nickname);
-        let totalPlayers = localStorage.length;
-        if (currentPlayerPosition !== -1) {
-            let userTime = localStorage.getItem("speedrun " + nickname);
-            if (userTime >= 60) {
-                userTime = Math.floor(userTime / 60) + "min " + (userTime % 60);
+            localStorageArray.sort(function (a, b) {
+                return a[1] - b[1];
+            });
+            let scoreboardDisplayLimit;
+            if (localStorageArray.length > 5) {
+                scoreboardDisplayLimit = 5;
+            } else {
+                scoreboardDisplayLimit = localStorageArray.length;
             }
-            scoreboardHTML += `<div class="your-position">Your position : ${currentPlayerPosition + 1}/${totalPlayers} with ${userTime} seconds</div>`;
+            for (let i = 0; i < scoreboardDisplayLimit; i++) {
+                let time = localStorageArray[i][1];
+                if (localStorageArray[i][1] >= 60) {
+                    time = Math.floor(localStorageArray[i][1] / 60) + "min " + (localStorageArray[i][1] % 60);
+                }
+                scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${time} seconds</div>`;
+            }
+            let currentPlayerPosition = localStorageArray.findIndex(element => element[0] === "speedrun " + nickname);
+            let totalPlayers = localStorage.length;
+            if (currentPlayerPosition !== -1) {
+                let userTime = localStorage.getItem("speedrun " + nickname);
+                if (userTime >= 60) {
+                    userTime = Math.floor(userTime / 60) + "min " + (userTime % 60);
+                }
+                scoreboardHTML += `<div class="your-position">Your position : ${currentPlayerPosition + 1}/${totalPlayers} with ${userTime} seconds</div>`;
+            }
+        }
+    } else if (gameMode === "infinite") {
+        if (Object.keys(localStorage).filter(key => key.includes("infinite")).length === 0) {
+            scoreboardHTML += `<div class="score">No scores yet</div>`;
+        } else {
+            for (let i = 0; i < localStorage.length; i++) {
+                if (localStorage.key(i).includes("infinite")) {
+                    localStorageArray.push([localStorage.key(i).slice(9), localStorage.getItem(localStorage.key(i))]);
+                }
+            }
+            localStorageArray.sort(function (a, b) {
+                return b[1] - a[1];
+            });
+            let scoreboardDisplayLimit;
+            if (localStorageArray.length > 5) {
+                scoreboardDisplayLimit = 5;
+            } else {
+                scoreboardDisplayLimit = localStorageArray.length;
+            }
+            for (let i = 0; i < scoreboardDisplayLimit; i++) {
+                let levels = localStorageArray[i][1];
+                scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${levels} levels</div>`;
+            }
+            let currentPlayerPosition = localStorageArray.findIndex(element => element[0] === "infinite " + nickname);
+            let totalPlayers = localStorage.length;
+            if (currentPlayerPosition !== -1) {
+                let userLevels = localStorage.getItem("infinite " + nickname);
+                scoreboardHTML += `<div class="your-position">Your position : ${currentPlayerPosition + 1}/${totalPlayers} with ${userLevels} levels</div>`;
+            }
         }
     }
     scoreboard.innerHTML = scoreboardHTML;
