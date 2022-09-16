@@ -230,24 +230,23 @@ function generateGame() {
     if (gameMode === "speedrun") {
         if (currentLevel <= 5) {
             currentDifficulty = 5;
-        } else if (currentLevel > 5 && currentLevel <= 10) {
-            currentDifficulty = 6;
-        } else if (currentLevel > 10 && currentLevel <= 15) {
-            currentDifficulty = 8;
-        } else if (currentLevel > 15) {
-            if (localStorage.getItem(nickname) !== null) {
-                if (timerValue < localStorage.getItem(nickname)) {
-                    localStorage.setItem(nickname, timerValue);
+            // } else if (currentLevel > 5 && currentLevel <= 10) {
+            //     currentDifficulty = 6;
+            // } else if (currentLevel > 10 && currentLevel <= 15) {
+            //     currentDifficulty = 8;
+        } else if (currentLevel > 5) {
+            if (localStorage.getItem("speedrun " + nickname) !== null) {
+                if (timerValue < localStorage.getItem("speedrun " + nickname)) {
+                    localStorage.setItem("speedrun " + nickname, timerValue);
                 }
             } else {
-                localStorage.setItem(nickname, timerValue);
+                localStorage.setItem("speedrun " + nickname, timerValue);
             }
             updateScoreboard();
             closeGame();
         }
     } else if (gameMode === "infinite") {
-        // currentDifficulty = Math.floor(Math.random() * (10 - 4 + 1)) + 4;
-        currentDifficulty = 3;
+        currentDifficulty = Math.floor(Math.random() * (10 - 3 + 1)) + 3;
     }
     fillCanvas("#fff");
     drawGrid("#000", currentDifficulty, currentDifficulty, 1);
@@ -388,7 +387,7 @@ function failedTry() {
         levelDiv.classList.remove("shake");
     }, 0.5 * 1000);
     if (gameMode === "infinite") {
-        console.log("Total level completed:",currentLevel-1);
+        console.log("Total level completed:", currentLevel - 1);
     }
     initGrid(5);
     generateGame();
@@ -539,7 +538,9 @@ function updateScoreboard() {
         scoreboardHTML += `<div class="score">No scores yet</div>`;
     } else {
         for (let i = 0; i < localStorage.length; i++) {
-            localStorageArray.push([localStorage.key(i), localStorage.getItem(localStorage.key(i))]);
+            if (localStorage.key(i).includes("speedrun")) {
+                localStorageArray.push([localStorage.key(i).slice(9), localStorage.getItem(localStorage.key(i))]);
+            }
         }
         localStorageArray.sort(function (a, b) {
             return a[1] - b[1];
@@ -557,10 +558,10 @@ function updateScoreboard() {
             }
             scoreboardHTML += `<div class="score">${i + 1} - ${localStorageArray[i][0]} : ${time} seconds</div>`;
         }
-        let currentPlayerPosition = localStorageArray.findIndex(element => element[0] === nickname);
+        let currentPlayerPosition = localStorageArray.findIndex(element => element[0] === "speedrun " + nickname);
         let totalPlayers = localStorage.length;
         if (currentPlayerPosition !== -1) {
-            let userTime = localStorage.getItem(nickname);
+            let userTime = localStorage.getItem("speedrun " + nickname);
             if (userTime >= 60) {
                 userTime = Math.floor(userTime / 60) + "min " + (userTime % 60);
             }
