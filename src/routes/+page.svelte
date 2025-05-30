@@ -468,6 +468,16 @@
 			console.log("Speedrun mode: Failed attempt at level", currentLevel);
 			// In speedrun, a fail on a level means you have to retry that level.
 			// Timer continues.
+			stopTimer(); // Reset timer
+			startTimer(); // Restart timer
+			currentLevel = 0; // Reset to level 0, generateGameLogic will increment to 1
+			
+			userClickedCells = []; 
+			levelFinished = false; 
+			isClicking = false; 
+
+			generateGameLogic(); // Regenerate level (will be level 1)
+			return; // Stop further execution for speedrun fail case
 		}
 		
 		userClickedCells = []; 
