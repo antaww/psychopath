@@ -13,6 +13,7 @@
 	let currentLevel = 0;
 	let timerValue = 0; // Sera en millisecondes
 	let timerInterval: number | undefined = undefined; // Pour stocker l'ID de l'intervalle du timer
+	let startTime: number = 0; // To store the timestamp when the timer starts
 
 	let currentDifficulty = 0; 
 	let levelsCount = 15;
@@ -120,21 +121,27 @@
 	}
 
 	function startTimer() {
-		timerValue = 0;
-		
+		startTime = performance.now();
+		timerValue = 0; // Reset display, first interval will set it based on startTime
+
 		if (timerInterval !== undefined) {
-            window.clearInterval(timerInterval);
-        }
-		timerInterval = window.setInterval(() => { 
-			timerValue += 10; // Incrémente de 10ms
-		}, 10); // Intervalle de 10ms
+			window.clearInterval(timerInterval);
+		}
+		timerInterval = window.setInterval(() => {
+			timerValue = Math.floor(performance.now() - startTime);
+		}, 10); // Update display every 10ms
 	}
 
 	function stopTimer() {
 		if (timerInterval !== undefined) {
-            window.clearInterval(timerInterval);
-            timerInterval = undefined;
-        }
+			window.clearInterval(timerInterval);
+			timerInterval = undefined;
+			// Ensure timerValue has the most up-to-date value based on when stopTimer was called
+			// and if startTime was initialized (i.e., timer was actually started)
+			if (startTime > 0) {
+				timerValue = Math.floor(performance.now() - startTime);
+			}
+		}
 	}
 
 	function handlePlaySpeedrun() {
