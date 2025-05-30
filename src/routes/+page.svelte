@@ -557,7 +557,7 @@
 				if (status === 'SUBSCRIBED') {
 					console.log('Subscribed to speedrun_scores changes!');
 				} else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-					console.error('Subscription error or timed out:', err, 'Status:', status);
+					// console.error('Subscription error or timed out:', err, 'Status:', status);
 				}
 			});
 	});
@@ -590,7 +590,7 @@
 	{#if !isPlaying && gameMode === ''}
 		<div class="buttons-container">
 			<button class="difficulty-button game-button green bounceInDown" on:click={handlePlaySpeedrun}>Speedrun</button>
-			<button class="difficulty-button game-button green bounceInDown" on:click={handlePlayInfinite}>Infinite</button>
+			<!-- <button class="difficulty-button game-button green bounceInDown" on:click={handlePlayInfinite}>Infinite</button> -->
 		</div>
 	{/if}
 
