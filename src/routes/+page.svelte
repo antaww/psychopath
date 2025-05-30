@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '$lib/logger';
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { supabase } from '$lib/supabaseClient'; // Importer le client Supabase
 	import type { RealtimeChannel } from '@supabase/supabase-js';
