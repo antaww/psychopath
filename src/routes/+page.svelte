@@ -29,6 +29,8 @@
 	let isClicking = false;
 	let levelFinished = false;
 
+	let isNicknameValid = false;
+
 	interface ScoreEntry {
 		id: number;
 		pseudo: string;
@@ -147,7 +149,29 @@
 		console.log('Play Infinite');
 	}
 
+	function sanitizeNickname(value: string): string {
+		return value.replace(/[^a-zA-Z0-9_]/g, '');
+	}
+
+	function handleNicknameInput(event: Event) {
+		const inputElement = event.target as HTMLInputElement;
+		const originalValue = inputElement.value;
+		const sanitizedValue = sanitizeNickname(originalValue);
+
+		if (originalValue !== sanitizedValue) {
+			inputElement.value = sanitizedValue; // Directly update the input field
+		}
+		nickname = sanitizedValue;
+	}
+
+	$: isNicknameValid = nickname.trim() !== '';
+
 	async function handleValidateNickname() {
+		if (!isNicknameValid) { // Safety check, button should be disabled
+			console.warn("Attempted to validate nickname when invalid.");
+			return;
+		}
+		// nickname is already sanitized and confirmed not empty by isNicknameValid
 		console.log('Nickname:', nickname);
 		isPlaying = true;
 		
@@ -564,8 +588,15 @@
 
 	{#if !isPlaying && gameMode !== ''}
 		<div class="nickname-container"> 
-			<input type="text" class="difficulty-button game-button purple" bind:value={nickname} placeholder="Enter your nickname" maxlength="15">
-			<button class="difficulty-button game-button green" on:click={handleValidateNickname}>OK</button>
+			<input 
+				type="text" 
+				class="difficulty-button game-button purple" 
+				value={nickname} 
+				on:input={handleNicknameInput}
+				placeholder="Enter your nickname" 
+				maxlength="15"
+			>
+			<button class="difficulty-button game-button green" on:click={handleValidateNickname} disabled={!isNicknameValid}>OK</button>
 		</div>
 		
 		<div class="color-list"> 
@@ -662,4 +693,9 @@
         display: flex; /* Ensure they are flex by default when shown */
         /* Add other necessary styles from your original CSS if they were controlling visibility or layout beyond display:none */
     }
+
+	.nickname-container button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
 </style>
