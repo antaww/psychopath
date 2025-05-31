@@ -2,6 +2,7 @@
 
 * {
     margin: 0;
+    user-select: none;
 }
 
 body {
