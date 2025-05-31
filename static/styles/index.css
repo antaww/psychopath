@@ -63,7 +63,7 @@ body {
 }
 
 .color-list {
-    max-width: 142px;
+    max-width: 260px;
     flex-flow: wrap;
     height: fit-content;
     padding: 6px;
