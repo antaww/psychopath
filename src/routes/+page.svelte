@@ -664,6 +664,7 @@
 	{#if isPlaying}
 		<div class="inGameButtons">
 			<div class="timer difficulty-button game-button purple">{formatTime(timerValue)}</div> 
+			<button class="difficulty-button game-button orange" on:click={handleLobbyClick}>Lobby</button> 
 			<button class="difficulty-button game-button red" on:click={handleResetClick}>Reset</button> 
 		</div>
 	{/if}
@@ -697,7 +698,6 @@
         display: flex; /* Ensure they are flex by default when shown */
         /* Add other necessary styles from your original CSS if they were controlling visibility or layout beyond display:none */
     }
-	
 	.scoreboard {
 		align-items: center;
 		background-color: #00000082;
