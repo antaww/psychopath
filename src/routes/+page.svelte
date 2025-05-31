@@ -42,6 +42,31 @@
 	let scoreboardEntries: ScoreEntry[] = [];
 	let speedrunScoresChannel: RealtimeChannel | null = null;
 
+	// --- Flashlight Effect Logic ---
+	let titleElement: HTMLHeadingElement | null = null;
+	let flashlightStyle = '';
+	const flashlightRadius = 75; // px, adjust for desired "beam" size
+
+	function handleTitleMouseMove(event: MouseEvent) {
+		if (!titleElement) return;
+		const rect = titleElement.getBoundingClientRect();
+		const x = event.clientX - rect.left;
+		const y = event.clientY - rect.top;
+		flashlightStyle = `clip-path: circle(${flashlightRadius}px at ${x}px ${y}px);`;
+	}
+
+	function handleTitleMouseEnter() {
+		// The mousemove event will immediately set the clip-path.
+		// If you want a default position on enter before first move, you could set it here.
+		// For now, relying on immediate mousemove.
+	}
+
+	function handleTitleMouseLeave() {
+		// Reset to a 0px radius circle to hide the lit effect
+		flashlightStyle = `clip-path: circle(0px at 0px 0px);`;
+	}
+	// --- End Flashlight Effect Logic ---
+
 	// --- Fonctions Supabase pour les scores ---
 	async function saveSpeedrunScore(playerName: string, timeInMilliseconds: number) {
 		if (!playerName) {
@@ -572,6 +597,17 @@
 	});
 </script>
 
+<h1
+	class="game-title {isPlaying ? 'in-game' : (gameMode === '' ? 'lobby lobby-title-slide-bounce' : 'lobby')}"
+	bind:this={titleElement}
+	on:mousemove={handleTitleMouseMove}
+	on:mouseenter={handleTitleMouseEnter}
+	on:mouseleave={handleTitleMouseLeave}
+>
+	Psychopath
+	<span class="title-lit" style={flashlightStyle}>Psychopath</span>
+</h1>
+
 <!-- Structure HTML reprise de votre index.html original -->
 <div class="scoreboard rubberBand">
 	<h2>Scoreboard (Speedrun)</h2>
@@ -696,14 +732,69 @@
 	   car ils n'étaient pas dans votre CSS original et pourraient interférer.
 	   Si vous souhaitez un style spécifique pour ces éléments dans le nouveau design, dites-le moi. */
 
-	.nickname-container,
-    .color-list {
-        display: flex; /* Ensure they are flex by default when shown */
-        /* Add other necessary styles from your original CSS if they were controlling visibility or layout beyond display:none */
-    }
-
 	.nickname-container button:disabled {
-		opacity: 0.6;
 		cursor: not-allowed;
+		opacity: 0.6;
 	}
+
+	.game-title {
+		/* Base style for the unlit text - now white */
+		color: #fff; /* Base text color */
+		font-family: 'Carter One', sans-serif;
+		position: absolute; /* Still absolute for page layout */
+		text-shadow: 2px 2px 1px #030102, -2px 2px 1px #030102, 2px -2px 1px #d7564a, -2px -2px 1px #d7564a, 0px 2px 1px #d7564a, 0px -2px 1px #d7564a, 0px 4px 1px #d7564a, 2px 4px 1px #d7564a, -2px 4px 1px #d7564a;
+		white-space: nowrap;
+		z-index: 10;
+	}
+
+	.title-lit {
+		/* Overlay for the "lit" text, clipped by flashlightStyle - now #d84c39 */
+		color: #eb7057; /* Flashlight reveal color */
+		left: 0;
+		pointer-events: none; /* Allows mouse events to pass through to parent h1 */
+		position: absolute;
+		text-shadow: inherit; /* Inherits from .game-title */
+		top: 0;
+		white-space: nowrap; /* Consistent with parent */
+		z-index: 1; /* Sits on top of the base text color within the parent */
+	}
+
+	.game-title.in-game {
+		font-size: 2.5rem;
+		left: 20px;
+		top: 20px;
+	}
+
+	.game-title.lobby {
+		font-size: 6rem;
+		left: 50%;
+		text-align: center;
+		top: 25%;
+		transform: translateX(-50%);
+	}
+
+	.lobby-title-slide-bounce {
+		animation: slideInFromLeftWithBounce 0.8s forwards; /* Using 'forwards' to keep final state */
+	}
+
+	@keyframes slideInFromLeftWithBounce {
+		0% {
+			opacity: 0;
+			transform: translateX(-100vw); /* Start far left */
+		}
+		60% {
+			opacity: 1;
+			transform: translateX(-45%); /* Overshoot slightly (target is -50%) */
+		}
+		80% {
+			transform: translateX(-52%); /* Bounce back a bit */
+		}
+		100% {
+			opacity: 1;
+			transform: translateX(-50%); /* Settle at center */
+		}
+	}
+
+	/* Removed custom bounceInDown keyframes and class definition. 
+	   Relies on global bounceInDown from animate.css or similar. */
 </style>
