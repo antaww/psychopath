@@ -658,12 +658,12 @@
             <div class="swatch unselected" data-color="#F2D7B5D1" style="background: #F2D7B5D9"></div>
             <div class="swatch unselected" data-color="#000000D1" style="background: #000000D9"></div>
 		</div>
+		<button class="difficulty-button game-button orange" on:click={handleLobbyClick}>Lobby</button> 
 	{/if}
 
 	{#if isPlaying}
 		<div class="inGameButtons">
 			<div class="timer difficulty-button game-button purple">{formatTime(timerValue)}</div> 
-			<button class="difficulty-button game-button orange" on:click={handleLobbyClick}>Lobby</button> 
 			<button class="difficulty-button game-button red" on:click={handleResetClick}>Reset</button> 
 		</div>
 	{/if}
@@ -697,6 +697,7 @@
         display: flex; /* Ensure they are flex by default when shown */
         /* Add other necessary styles from your original CSS if they were controlling visibility or layout beyond display:none */
     }
+	
 	.scoreboard {
 		align-items: center;
 		background-color: #00000082;
