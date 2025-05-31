@@ -1147,16 +1147,20 @@
 	.final-time {
 		font-size: 1.4em;
 		color: #fff;
-		margin-bottom: 5px;
+		margin-bottom: 0px !important;
 		font-family: 'Carter One', sans-serif;
+		letter-spacing: .1em;
+		text-shadow: 2px 2px 1px #606060, -2px 2px 1px #606060, 2px -2px 1px #606060, -2px -2px 1px #606060, 0px 2px 1px #606060, 0px -2px 1px #606060, 0px 4px 1px #303030, 2px 4px 1px #303030, -2px 4px 1px #303030;
 	}
 
 	.final-time-rank {
 		font-size: 0.9em;
-		color: #aaa;
-		margin-top: -5px;
+		color: #aaa; /* Greyish color */
+		margin-top: -5px; /* Pull it up slightly */
 		margin-bottom: 15px;
 		font-family: 'Carter One', sans-serif;
+		letter-spacing: .05em; /* Slightly less spacing for smaller text */
+		text-shadow: 1px 1px 1px rgba(0,0,0,0.4);
 	}
 
 	.player-rank,
@@ -1166,11 +1170,15 @@
 		color: #fff;
 		margin-bottom: 15px;
 		font-family: 'Carter One', sans-serif;
+		letter-spacing: .1em;
+		text-shadow: 2px 2px 1px #606060, -2px 2px 1px #606060, 2px -2px 1px #606060, -2px -2px 1px #606060, 0px 2px 1px #606060, 0px -2px 1px #606060, 0px 4px 1px #303030, 2px 4px 1px #303030, -2px 4px 1px #303030;
 	}
 
 	.personal-best-new {
-		color: #4CAF50; /* Green for new PB */
+		color: #4CAF50; /* Green for new PB text, orange for outline */
 		font-weight: bold;
+		/* Override the generic shadow with an orange-bordered one, like the lobby button */
+		text-shadow: 2px 2px 1px #d74c21, -2px 2px 1px #d74c21, 2px -2px 1px #d74c21, -2px -2px 1px #d74c21, 0px 2px 1px #d74c21, 0px -2px 1px #d74c21, 0px 4px 1px #932604, 2px 4px 1px #932604, -2px 4px 1px #932604;
 	}
 
 	.personal-best-old {
