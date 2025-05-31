@@ -48,6 +48,8 @@
 
 	let isNicknameValid = false;
 
+	let showRulesModal = false;
+
 	interface ScoreEntry {
 		id: number;
 		pseudo: string;
@@ -584,6 +586,10 @@
 		}
 	}
 
+	function toggleRulesModal() {
+		showRulesModal = !showRulesModal;
+	}
+
 	onMount(async () => {
 		await fetchScoreboard(); // Fetch initial scoreboard data
 
@@ -646,6 +652,7 @@
 		<div class="buttons-container">
 			<button class="difficulty-button game-button green bounceInDown" on:click={handlePlaySpeedrun}>Speedrun</button>
 			<!-- <button class="difficulty-button game-button green bounceInDown" on:click={handlePlayInfinite}>Infinite</button> -->
+			<button class="difficulty-button game-button blue bounceInDown" on:click={toggleRulesModal}>Rules</button>
 		</div>
 	{/if}
 
@@ -707,6 +714,25 @@
 		<div class="cross-content heartBeat">❌</div>
 	</div>
 {/if} -->
+
+{#if showRulesModal}
+	<div class="modal-backdrop" on:click={toggleRulesModal}></div>
+	<div class="modal {showRulesModal ? 'bounceInDown is-visible' : 'modal-leave'}">
+		<h2>Game Rules</h2>
+		<p>
+			The goal of the game is to reproduce the highlighted path on the grid.<br />
+			Click and drag your mouse to draw your path.<br />
+			- <strong>Speedrun:</strong> Complete 15 levels as fast as possible. Your time will be recorded on the scoreboard.<br />
+			- <strong>Infinite:</strong> Play as many levels as you can. The difficulty increases randomly. (Coming soon!)<br /><br />
+			Be careful, any mistake will make you restart the current level (in Speedrun) or end the game (in Infinite).
+		</p>
+		<button class="difficulty-button game-button orange" on:click={toggleRulesModal}>Close</button>
+	</div>
+{/if}
+
+<div class="footer-credit">
+	Created by <a href="https://github.com/antaww" target="_blank" rel="noopener noreferrer">antaww</a>
+</div>
 
 <style>
 	.nickname-container,
@@ -858,5 +884,88 @@
 	.swatch.unselected {
 		/* Styles for unselected, if different from base, can go here */
 		/* For example, a slightly dimmer look or different border */
+	}
+
+	.modal-backdrop {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		background-color: rgba(0, 0, 0, 0.5);
+		z-index: 999; /* Ensure it's above other content but below modal */
+	}
+
+	.modal {
+		align-items: center;
+		background-color: rgba(0, 0, 0, 0.85); /* Darker background for white text */
+		border-radius: 10px;
+		box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+		box-sizing: border-box; /* Added for more predictable sizing */
+		display: flex;
+		flex-direction: column;
+		gap: 15px;
+		justify-content: space-between;
+		max-width: 500px;
+		opacity: 0;
+		padding: 25px;
+		position: fixed;
+		transform: translate(-50%, -50%) scale(0.9);
+		transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+		width: 90%;
+		z-index: 1000;
+	}
+
+	.modal.is-visible {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+
+	.modal h2 {
+		/* color: #333; */
+		color: #fff; /* White text */
+		font-family: 'Carter One', sans-serif;
+		margin-bottom: 10px;
+		text-align: center;
+	}
+
+	.modal p {
+		/* color: #555; */
+		color: #fff; /* White text */
+		font-family: 'Carter One', sans-serif; /* Apply Carter One font */
+		line-height: 1.6;
+		margin-bottom: 20px;
+		text-align: justify;
+	}
+
+	.modal-enter {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+
+	.modal-leave {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.9);
+	}
+
+	.footer-credit {
+		bottom: 10px;
+		color: #fff;
+		font-family: 'Carter One', sans-serif;
+		font-size: 0.9rem;
+		left: 50%;
+		position: fixed;
+		text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+		transform: translateX(-50%);
+		z-index: 100;
+	}
+
+	.footer-credit a {
+		color: #f0ad4e; /* A warm color that might fit your theme */
+		text-decoration: none;
+	}
+
+	.footer-credit a:hover {
+		text-decoration: underline;
 	}
 </style>
