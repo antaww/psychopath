@@ -116,6 +116,31 @@
 		}
 	}
 
+	async function handleScoreSavingAndConfetti(playerName: string, timeMs: number) {
+		if (playerName && timeMs > 0) {
+			try {
+				await saveSpeedrunScore(playerName, timeMs); // This updates isNewPersonalBest, ranks, etc.
+				
+				// Now trigger confetti with the updated isNewPersonalBest
+				if (typeof confetti === 'function') {
+					confetti({
+						particleCount: isNewPersonalBest ? 300 : 150,
+						spread: isNewPersonalBest ? 100 : 70,
+						origin: { y: 0.6 },
+						zIndex: 1005 // Ensure confetti is above the modal (modal z-index is 1000)
+					});
+				}
+			} catch (e) {
+				console.error("Error during score processing or confetti:", e);
+				// Game over screen is already shown. User can interact with it.
+				// Log error, but no automatic redirection.
+			}
+		} else {
+			console.warn("Invalid nickname or time for score processing.", "Nickname:", playerName, "Time:", timeMs);
+			// Game over screen shown, but score won't be processed or confetti for PB won't be accurate.
+		}
+	}
+
 	async function saveSpeedrunScore(playerName: string, timeInMilliseconds: number) {
 		if (!playerName) {
 			console.log('Player name is empty, score not saved.');
@@ -357,41 +382,25 @@
 				console.log("Speedrun finished! Score:", timerValue, "Pseudo:", nickname);
 				stopTimer(); 
 				finalTimeMs = timerValue; // Store final time
-
-				if (nickname && finalTimeMs > 0) { 
-					console.log(`[DEBUG] Before saving: timerValue=${finalTimeMs}, nickname=${nickname}, currentLevel=${currentLevel}, levelsCount=${levelsCount}`);
-					try {
-						// saveSpeedrunScore will now also fetch rank and set PB status
-						await saveSpeedrunScore(nickname, finalTimeMs);
-					} catch (e) {
-						console.error("Error calling saveSpeedrunScore from generateGameLogic:", e);
-						// If saving/ranking fails, perhaps a simpler game over or direct to lobby
-						handleLobbyClick(); // Fallback
-						return;
-					}
-				} else {
-					console.warn("Invalid nickname or time, score not saved and rank not fetched.", "Nickname:", nickname, "Time:", finalTimeMs);
-					handleLobbyClick(); // Fallback: if no nickname/time, can't show proper game over
-					return;
-				}
 				isPlaying = false; // Stop game interactions
-				showGameOverScreen = true; // Show the game over UI
-				
-				// Trigger confetti
-				if (typeof confetti === 'function') {
-					confetti({
-						particleCount: isNewPersonalBest ? 300 : 150, // More confetti for a new PB
-						spread: isNewPersonalBest ? 100 : 70,
-						origin: { y: 0.6 },
-						zIndex: 1005 // Ensure confetti is above the modal (modal z-index is 1000)
-					});
-				}
+				showGameOverScreen = true; // Show the game over UI immediately
+
+				// Perform score saving, ranking, and confetti in the background
+				// This function itself is async, but we don't await its completion here
+				// so generateGameLogic can return and UI updates.
+				handleScoreSavingAndConfetti(nickname, finalTimeMs);
 
 				// DO NOT call handleLobbyClick() here anymore
 				return;
 			}
 		} else if (gameMode === "infinite") {
 			currentDifficulty = Math.floor(Math.random() * (10 - 3 + 1)) + 3;
+			finalTimeMs = 0;
+
+			// Reset game state for a new speedrun with the same nickname
+			isPlaying = true;
+			currentLevel = 0; // This will be incremented by generateGameLogic
+			timerValue = 0;
 		}
 
 		if (gameMode === "speedrun" && levelsCount === 1 && currentLevel === 1) {
