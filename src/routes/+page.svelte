@@ -460,37 +460,57 @@
 		let row = Math.floor(y / cellHeight);
 
 		if (row < 0 || row >= currentDifficulty || col < 0 || col >= currentDifficulty) {
-			return;
+			return; // Mouse is outside grid boundaries
 		}
 		
 		const currentCellClicked: [number, number] = [row, col];
 
-		if (!drawnCells.some(cell => cell[0] === row && cell[1] === col)) {
+		// 1. If mouse is still in the very last cell that was painted, do nothing.
+		if (userClickedCells.length > 0) {
+			const lastPaintedCell = userClickedCells[userClickedCells.length - 1];
+			if (lastPaintedCell[0] === currentCellClicked[0] && lastPaintedCell[1] === currentCellClicked[1]) {
+				return; 
+			}
+		}
+
+		// 2. Check if the current cell is part of the designated path.
+		if (!drawnCells.some(cell => cell[0] === currentCellClicked[0] && cell[1] === currentCellClicked[1])) {
 			console.log("Clicked outside path - fail");
 			failedTryLogic(); 
-            isClicking = false; // Stop current click sequence on fail
+			isClicking = false;
 			return; 
 		}
 
-		if (!userClickedCells.some(cell => cell[0] === row && cell[1] === col)) {
-			// Check if this new cell is adjacent to the previous userClickedCell (if any)
-			if (userClickedCells.length > 0) {
-				const lastCell = userClickedCells[userClickedCells.length - 1];
-				const dx = Math.abs(lastCell[1] - col);
-				const dy = Math.abs(lastCell[0] - row);
-				// Allow only adjacent cells (not diagonal, distance of 1)
-				if (!((dx === 1 && dy === 0) || (dx === 0 && dy === 1))) {
-					console.log("Skipped a cell - fail");
-					failedTryLogic();
-                    isClicking = false;
-					return;
-				}
-			}
-			ctx.fillStyle = userCellsColor;
-			ctx.fillRect(col * cellWidth, row * cellHeight, cellWidth, cellHeight);
-			userClickedCells.push(currentCellClicked);
-		} 
+		// 3. Check if the user is trying to re-color a cell they've already colored in this attempt.
+		//    (This check is now valid because we've already handled being in the *last* painted cell).
+		if (userClickedCells.some(cell => cell[0] === currentCellClicked[0] && cell[1] === currentCellClicked[1])) {
+			console.log("Clicked on an already colored cell (revisit) - fail");
+			failedTryLogic();
+			isClicking = false;
+			return;
+		}
 
+		// 4. Process the new cell (it's on the path, not yet clicked, and not the same as the immediate last)
+		// Adjacency check: Only if it's not the first cell being clicked.
+		if (userClickedCells.length > 0) {
+			const previousCell = userClickedCells[userClickedCells.length - 1]; // The cell they are coming FROM
+			const dx = Math.abs(previousCell[1] - currentCellClicked[1]);
+			const dy = Math.abs(previousCell[0] - currentCellClicked[0]);
+			if (!((dx === 1 && dy === 0) || (dx === 0 && dy === 1))) {
+				console.log("Skipped a cell - fail");
+				failedTryLogic();
+				isClicking = false;
+				return;
+			}
+		}
+		// Note: If it's the first cell (userClickedCells.length === 0),
+		// it must be part of drawnCells (checked above), and no adjacency check is needed yet.
+
+		ctx.fillStyle = userCellsColor;
+		ctx.fillRect(currentCellClicked[1] * cellWidth, currentCellClicked[0] * cellHeight, cellWidth, cellHeight);
+		userClickedCells.push(currentCellClicked);
+
+		// 5. Check for level completion
 		if (userClickedCells.length === drawnCells.length) {
 			if (areArraysEqual(userClickedCells, drawnCells)) {
 				console.log("Level Finished!");
