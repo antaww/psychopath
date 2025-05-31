@@ -10,20 +10,16 @@
 	import { supabase } from '$lib/supabaseClient'; // Importer le client Supabase
 	import type { RealtimeChannel } from '@supabase/supabase-js';
 
-	// La logique JavaScript viendra ici plus tard
-	// par exemple, l'initialisation de Supabase, les états du jeu, les fonctions, etc.
-
-	// Exemple de variables d'état Svelte (juste pour illustration pour l'instant)
 	let nickname = '';
 	let gameMode = ''; // 'speedrun' or 'infinite'
 	let isPlaying = false;
 	let currentLevel = 0;
-	let timerValue = 0; // Sera en millisecondes
-	let timerInterval: number | undefined = undefined; // Pour stocker l'ID de l'intervalle du timer
+	let timerValue = 0; // Will be in milliseconds
+	let timerInterval: number | undefined = undefined; // To store the ID of the timer interval
 	let startTime: number = 0; // To store the timestamp when the timer starts
 
 	let currentDifficulty = 0;
-	let levelsCount = 2;
+	let levelsCount = 15;
 
 	let cellPathColor = "rgba(252,225,18,0.3)";
 
@@ -127,14 +123,14 @@
 		}
 
 		try {
-			// 1. Récupérer le score existant
+			// 1. Fetch the existing score
 			const { data: existingScoreData, error: fetchError } = await supabase
 				.from('speedrun_scores')
 				.select('time_ms')
 				.eq('pseudo', playerName)
-				.single(); // On s'attend à 0 ou 1 résultat
+				.single(); // We expect 0 or 1 result
 
-			// PGRST116 signifie "Query returned 0 rows", ce qui est normal si le joueur n'a pas encore de score.
+			// PGRST116 means "Query returned 0 rows", which is normal if the player doesn't have a score yet.
 			if (fetchError && fetchError.code !== 'PGRST116') { 
 				console.error('Error fetching existing score:', fetchError);
 				// Try to get rank of current time even if fetching existing score fails
@@ -148,7 +144,7 @@
 			const existingTimeMs = existingScoreData?.time_ms;
 			previousPersonalBestMs = existingTimeMs ?? null; // Store previous PB regardless
 
-			// 2. Comparer et décider de mettre à jour/insérer
+			// 2. Compare and decide to update/insert
 			if (existingTimeMs === undefined || timeInMilliseconds < existingTimeMs) {
 				isNewPersonalBest = true;
 				const { data, error: upsertError } = await supabase
@@ -175,9 +171,6 @@
 					personalBestRank = finalTimeActualRank;
 				}
 			}
-
-			// playerRank = await fetchPlayerRank(playerName, timeInMilliseconds); // This line is now handled by finalTimeActualRank and personalBestRank logic above
-
 		} catch (error) {
 			console.error('Exception in saveSpeedrunScore:', error);
 			// Attempt to fetch rank for current time even on general exception
@@ -208,7 +201,6 @@
 		}
 	}
 
-	// Fonctions (seront migrées/adaptées depuis votre index.js)
 	function formatTime(ms: number): string {
 		const totalCentiseconds = Math.floor(ms / 10);
 		const seconds = Math.floor(totalCentiseconds / 100);
@@ -249,13 +241,13 @@
 
 	function handlePlaySpeedrun() {
 		gameMode = 'speedrun';
-		// Afficher la demande de pseudo, etc.
+		// Display the nickname request, etc.
 		console.log('Play Speedrun');
 	}
 
 	function handlePlayInfinite() {
 		gameMode = 'infinite';
-		// Afficher la demande de pseudo, etc.
+		// Display the nickname request, etc.
 		console.log('Play Infinite');
 	}
 
@@ -303,7 +295,7 @@
 		gameMode = '';
 		nickname = '';
 		currentLevel = 0;
-		if (timerInterval) { // S'assurer que timerInterval n'est pas undefined
+		if (timerInterval) { // Ensure timerInterval is not undefined
 			stopTimer();
 		}
 		timerValue = 0;
@@ -324,26 +316,26 @@
 		if (canvasElement) { 
 			ctx = canvasElement.getContext('2d');
 			if (!ctx) {
-				console.error("Impossible d'obtenir le contexte 2D du canvas");
+				console.error("Impossible to get the 2D context of the canvas");
 				return;
 			}
 		} else {
-			console.error("L'élément Canvas n'est pas encore disponible pour initGrid.");
+			console.error("The canvas element is not available yet for initGrid.");
 		}
 	}
 
 	async function generateGameLogic() {
 		if (!ctx || !canvasElement) {
-			console.error("Contexte ou Canvas non initialisé pour generateGameLogic");
+			console.error("Context or Canvas not initialized for generateGameLogic");
             if (canvasElement && !ctx) {
-                console.log("Tentative d'initialisation du contexte dans generateGameLogic");
+                console.log("Attempting to initialize the context in generateGameLogic");
                 ctx = canvasElement.getContext('2d');
                 if (!ctx) {
-                    console.error("Échec de l'initialisation du contexte dans generateGameLogic");
+                    console.error("Failed to initialize the context in generateGameLogic");
                     return;
                 }
             } else if (!canvasElement) {
-                 console.error("CanvasElement non disponible dans generateGameLogic");
+                 console.error("CanvasElement not available in generateGameLogic");
                  return;
             }
 		}
@@ -362,23 +354,23 @@
 			}
 
 			if (currentLevel > levelsCount) { 
-				console.log("Speedrun terminé ! Score:", timerValue, "Pseudo:", nickname);
+				console.log("Speedrun finished! Score:", timerValue, "Pseudo:", nickname);
 				stopTimer(); 
 				finalTimeMs = timerValue; // Store final time
 
 				if (nickname && finalTimeMs > 0) { 
-					console.log(`[DEBUG] Avant sauvegarde: timerValue=${finalTimeMs}, nickname=${nickname}, currentLevel=${currentLevel}, levelsCount=${levelsCount}`);
+					console.log(`[DEBUG] Before saving: timerValue=${finalTimeMs}, nickname=${nickname}, currentLevel=${currentLevel}, levelsCount=${levelsCount}`);
 					try {
 						// saveSpeedrunScore will now also fetch rank and set PB status
 						await saveSpeedrunScore(nickname, finalTimeMs);
 					} catch (e) {
-						console.error("Erreur lors de l'appel à saveSpeedrunScore depuis generateGameLogic:", e);
+						console.error("Error calling saveSpeedrunScore from generateGameLogic:", e);
 						// If saving/ranking fails, perhaps a simpler game over or direct to lobby
 						handleLobbyClick(); // Fallback
 						return;
 					}
 				} else {
-					console.warn("Pseudo ou temps invalide, score non sauvegardé et rang non récupéré.", "Pseudo:", nickname, "Temps:", finalTimeMs);
+					console.warn("Invalid nickname or time, score not saved and rank not fetched.", "Nickname:", nickname, "Time:", finalTimeMs);
 					handleLobbyClick(); // Fallback: if no nickname/time, can't show proper game over
 					return;
 				}
@@ -932,13 +924,9 @@
 	}
 
 	.inGameButtons > .difficulty-button {
-		min-width: 9ch; /* Assure une largeur minimale pour MM:SS:CC et les autres textes */
+		min-width: 9ch; /* Ensure a minimum width for MM:SS:CC and other texts */
 		text-align: center;
 	}
-
-	/* J'ai enlevé les styles .scoreboard h2, .scoreboard ol, .scoreboard li que j'avais ajoutés
-	   car ils n'étaient pas dans votre CSS original et pourraient interférer.
-	   Si vous souhaitez un style spécifique pour ces éléments dans le nouveau design, dites-le moi. */
 
 	.nickname-container button:disabled {
 		cursor: not-allowed;
@@ -1003,9 +991,6 @@
 		}
 	}
 
-	/* Removed custom bounceInDown keyframes and class definition. 
-	   Relies on global bounceInDown from animate.css or similar. */
-
 	.color-list {
 		align-items: center;
 		display: flex;
@@ -1046,11 +1031,6 @@
 		transform: scale(1.15);
 	}
 
-	.swatch.unselected {
-		/* Styles for unselected, if different from base, can go here */
-		/* For example, a slightly dimmer look or different border */
-	}
-
 	.modal-backdrop {
 		position: fixed;
 		top: 0;
@@ -1087,7 +1067,6 @@
 	}
 
 	.modal h2 {
-		/* color: #333; */
 		color: #fff; /* White text */
 		font-family: 'Carter One', sans-serif;
 		margin-bottom: 10px;
@@ -1095,7 +1074,6 @@
 	}
 
 	.modal p {
-		/* color: #555; */
 		color: #fff; /* White text */
 		font-family: 'Carter One', sans-serif; /* Apply Carter One font */
 		line-height: 1.6;
