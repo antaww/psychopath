@@ -635,7 +635,7 @@
 
 <!-- Structure HTML reprise de votre index.html original -->
 <div class="scoreboard rubberBand">
-	<h2>Scoreboard (Speedrun)</h2>
+	<h3>Scoreboard (Speedrun)</h3>
 	{#if scoreboardEntries.length > 0}
 		<ol>
 			{#each scoreboardEntries as entry (entry.id)}
