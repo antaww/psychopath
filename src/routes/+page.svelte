@@ -635,7 +635,7 @@
 
 <!-- Structure HTML reprise de votre index.html original -->
 <div class="scoreboard rubberBand">
-	<h3>Scoreboard (Speedrun)</h3>
+	<h2>Scoreboard (Speedrun)</h2>
 	{#if scoreboardEntries.length > 0}
 		<ol>
 			{#each scoreboardEntries as entry (entry.id)}
@@ -720,11 +720,11 @@
 	<div class="modal {showRulesModal ? 'bounceInDown is-visible' : 'modal-leave'}">
 		<h2>Game Rules</h2>
 		<p>
-			The goal of the game is to reproduce the highlighted path on the grid.<br />
-			Click and drag your mouse to draw your path.<br />
-			- <strong>Speedrun:</strong> Complete 15 levels as fast as possible. Your time will be recorded on the scoreboard.<br />
-			- <strong>Infinite:</strong> Play as many levels as you can. The difficulty increases randomly. (Coming soon!)<br /><br />
-			Be careful, any mistake will make you restart the current level (in Speedrun) or end the game (in Infinite).
+			The goal of the game is to <span style="color: #ffcc00;">reproduce the highlighted path</span> on the grid.<br />
+			<u>Click and drag</u> your mouse to draw your path.<br />
+			- <strong><span style="color: #33cc33;">Speedrun</span> :</strong> Complete 15 levels as fast as possible. Your time will be recorded on the scoreboard.<br />
+			- <strong><span style="color: #cc33ff;">Infinite</span> :</strong> Play as many levels as you can. The difficulty increases randomly. (<span style="color: #ff3333;">Coming soon!</span>)<br /><br />
+			Be careful, any mistake will make you <span style="color: #ff6666;">restart the game</span> (in Speedrun) or <span style="color: #ff3333;">end the game</span> (in Infinite).
 		</p>
 		<button class="difficulty-button game-button orange" on:click={toggleRulesModal}>Close</button>
 	</div>
