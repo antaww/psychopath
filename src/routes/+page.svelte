@@ -61,7 +61,7 @@
 
 	// --- Flashlight Effect Logic ---
 	let titleElement: HTMLHeadingElement | null = null;
-	let flashlightStyle = '';
+	let flashlightStyle = 'clip-path: circle(0px at 0px 0px);';
 	const flashlightRadius = 75; // px, adjust for desired "beam" size
 
 	function handleTitleMouseMove(event: MouseEvent) {
