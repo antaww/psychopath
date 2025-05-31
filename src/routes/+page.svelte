@@ -1,3 +1,9 @@
+<script context="module" lang="ts">
+	// Declare confetti function type for TypeScript
+	// This ensures it's globally available for the component instance script
+	declare function confetti(options?: any): Promise<null> | null;
+</script>
+
 <script lang="ts">
 	import '$lib/logger';
 	import { onMount, onDestroy, tick } from 'svelte';
@@ -17,7 +23,7 @@
 	let startTime: number = 0; // To store the timestamp when the timer starts
 
 	let currentDifficulty = 0;
-	let levelsCount = 15;
+	let levelsCount = 2;
 
 	let cellPathColor = "rgba(252,225,18,0.3)";
 
@@ -49,6 +55,14 @@
 	let isNicknameValid = false;
 
 	let showRulesModal = false;
+
+	// Game Over Screen State
+	let showGameOverScreen = false;
+	let finalTimeMs = 0;
+	let personalBestRank: number | null = null; // Rank of the player's overall best
+	let finalTimeActualRank: number | null = null; // Rank of the time just achieved in this game
+	let isNewPersonalBest = false;
+	let previousPersonalBestMs: number | null = null;
 
 	interface ScoreEntry {
 		id: number;
@@ -85,6 +99,27 @@
 	// --- End Flashlight Effect Logic ---
 
 	// --- Fonctions Supabase pour les scores ---
+	async function fetchPlayerRank(playerName: string, scoreToRankMs: number): Promise<number | null> {
+		try {
+			const { data, error, count } = await supabase
+				.from('speedrun_scores')
+				.select('pseudo', { count: 'exact', head: false })
+				.lt('time_ms', scoreToRankMs);
+
+			if (error) {
+				console.error('Error fetching player rank:', error);
+				return null;
+			}
+
+			// The count returned by Supabase with .lt() is the number of scores strictly better.
+			// So, rank is count + 1.
+			return (count ?? 0) + 1;
+		} catch (err) {
+			console.error('Exception in fetchPlayerRank:', err);
+			return null;
+		}
+	}
+
 	async function saveSpeedrunScore(playerName: string, timeInMilliseconds: number) {
 		if (!playerName) {
 			console.log('Player name is empty, score not saved.');
@@ -102,28 +137,53 @@
 			// PGRST116 signifie "Query returned 0 rows", ce qui est normal si le joueur n'a pas encore de score.
 			if (fetchError && fetchError.code !== 'PGRST116') { 
 				console.error('Error fetching existing score:', fetchError);
+				// Try to get rank of current time even if fetching existing score fails
+				finalTimeActualRank = await fetchPlayerRank(playerName, timeInMilliseconds);
 				return;
 			}
 
+			// 1. Always fetch the rank of the time they just got.
+			finalTimeActualRank = await fetchPlayerRank(playerName, timeInMilliseconds);
+
 			const existingTimeMs = existingScoreData?.time_ms;
+			previousPersonalBestMs = existingTimeMs ?? null; // Store previous PB regardless
 
 			// 2. Comparer et décider de mettre à jour/insérer
 			if (existingTimeMs === undefined || timeInMilliseconds < existingTimeMs) {
+				isNewPersonalBest = true;
 				const { data, error: upsertError } = await supabase
 					.from('speedrun_scores')
 					.upsert({ pseudo: playerName, time_ms: timeInMilliseconds }, { onConflict: 'pseudo' });
 
 				if (upsertError) {
 					console.error('Error saving/updating speedrun score:', upsertError);
+					// personalBestRank will remain null or its old value if upsert fails, but finalTimeActualRank is set
+					return; 
 				} else {
 					console.log('Speedrun score saved/updated:', data);
-					// Le fetchScoreboard sera appelé par la souscription realtime
+					personalBestRank = finalTimeActualRank; // New PB, so its rank is the current time's rank
 				}
 			} else {
+				isNewPersonalBest = false;
 				console.log(`New score (${formatTime(timeInMilliseconds)}) is not better than existing score (${formatTime(existingTimeMs)}) for ${playerName}. Not updating.`);
+				// Score not updated, so PB rank is based on their existing best score
+				if (existingTimeMs !== undefined) {
+					personalBestRank = await fetchPlayerRank(playerName, existingTimeMs);
+				} else {
+					// This case should ideally not happen if !isNewPersonalBest, means no existing score but also not a new best.
+					// For safety, set personalBestRank to the current time's rank, as it's the only score we know.
+					personalBestRank = finalTimeActualRank;
+				}
 			}
+
+			// playerRank = await fetchPlayerRank(playerName, timeInMilliseconds); // This line is now handled by finalTimeActualRank and personalBestRank logic above
+
 		} catch (error) {
 			console.error('Exception in saveSpeedrunScore:', error);
+			// Attempt to fetch rank for current time even on general exception
+			if (timeInMilliseconds > 0 && finalTimeActualRank === null) { // Check if not already set
+				finalTimeActualRank = await fetchPlayerRank(playerName, timeInMilliseconds);
+			}
 		}
 	}
 
@@ -250,6 +310,11 @@
 		if (ctx && canvasElement) {
 			ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 		}
+		// Ensure game over screen is hidden when returning to lobby
+		showGameOverScreen = false;
+		personalBestRank = null;
+		finalTimeActualRank = null;
+		isNewPersonalBest = false;
 	}
 
 	function initGrid(difficulty: number) {
@@ -299,17 +364,38 @@
 			if (currentLevel > levelsCount) { 
 				console.log("Speedrun terminé ! Score:", timerValue, "Pseudo:", nickname);
 				stopTimer(); 
-				if (nickname && timerValue > 0) { 
-					console.log(`[DEBUG] Avant sauvegarde: timerValue=${timerValue}, nickname=${nickname}, currentLevel=${currentLevel}, levelsCount=${levelsCount}`);
+				finalTimeMs = timerValue; // Store final time
+
+				if (nickname && finalTimeMs > 0) { 
+					console.log(`[DEBUG] Avant sauvegarde: timerValue=${finalTimeMs}, nickname=${nickname}, currentLevel=${currentLevel}, levelsCount=${levelsCount}`);
 					try {
-						await saveSpeedrunScore(nickname, timerValue);
+						// saveSpeedrunScore will now also fetch rank and set PB status
+						await saveSpeedrunScore(nickname, finalTimeMs);
 					} catch (e) {
-						console.error("Erreur lors de l\'appel à saveSpeedrunScore depuis generateGameLogic:", e);
+						console.error("Erreur lors de l'appel à saveSpeedrunScore depuis generateGameLogic:", e);
+						// If saving/ranking fails, perhaps a simpler game over or direct to lobby
+						handleLobbyClick(); // Fallback
+						return;
 					}
 				} else {
-					console.warn("Pseudo ou temps invalide, score non sauvegardé.", "Pseudo:", nickname, "Temps:", timerValue);
+					console.warn("Pseudo ou temps invalide, score non sauvegardé et rang non récupéré.", "Pseudo:", nickname, "Temps:", finalTimeMs);
+					handleLobbyClick(); // Fallback: if no nickname/time, can't show proper game over
+					return;
 				}
-				handleLobbyClick(); 
+				isPlaying = false; // Stop game interactions
+				showGameOverScreen = true; // Show the game over UI
+				
+				// Trigger confetti
+				if (typeof confetti === 'function') {
+					confetti({
+						particleCount: isNewPersonalBest ? 300 : 150, // More confetti for a new PB
+						spread: isNewPersonalBest ? 100 : 70,
+						origin: { y: 0.6 },
+						zIndex: 1005 // Ensure confetti is above the modal (modal z-index is 1000)
+					});
+				}
+
+				// DO NOT call handleLobbyClick() here anymore
 				return;
 			}
 		} else if (gameMode === "infinite") {
@@ -610,6 +696,36 @@
 		showRulesModal = !showRulesModal;
 	}
 
+	// --- Game Over Screen Handlers ---
+	async function handlePlayAgainFromGameOver() {
+		showGameOverScreen = false;
+		personalBestRank = null;
+		finalTimeActualRank = null;
+		isNewPersonalBest = false;
+		previousPersonalBestMs = null;
+		finalTimeMs = 0;
+
+		// Reset game state for a new speedrun with the same nickname
+		isPlaying = true;
+		currentLevel = 0; // Will be incremented to 1 by generateGameLogic
+		timerValue = 0;
+
+		await tick(); // Ensure DOM is updated if canvas needs to be re-rendered or accessed
+
+		if (gameMode === 'speedrun') {
+			startTimer();
+		}
+		// initGrid might not be strictly necessary if difficulty logic is self-contained in generateGameLogic
+		// but good for consistency if it resets any visual state tied to difficulty.
+		initGrid(5); // Or determine initial difficulty based on gameMode settings
+		await generateGameLogic();
+	}
+
+	function handleLobbyFromGameOver() {
+		showGameOverScreen = false; // Hide game over screen
+		handleLobbyClick(); // Use existing lobby logic to reset fully
+	}
+
 	onMount(async () => {
 		await fetchScoreboard(); // Fetch initial scoreboard data
 
@@ -747,6 +863,35 @@
 			Be careful, any mistake will make you <span style="color: #ff6666;">restart the game</span> (in Speedrun) or <span style="color: #ff3333;">end the game</span> (in Infinite).
 		</p>
 		<button class="difficulty-button game-button orange" on:click={toggleRulesModal}>Close</button>
+	</div>
+{/if}
+
+<!-- Game Over Screen for Speedrun -->
+{#if showGameOverScreen && gameMode === 'speedrun'}
+	<div class="modal-backdrop" on:click={handleLobbyFromGameOver}></div>
+	<div class="modal game-over-modal bounceInDown is-visible">
+		<h2>Speedrun Complete!</h2>
+		<p class="final-time">Your Time: {formatTime(finalTimeMs)}</p>
+		{#if finalTimeActualRank !== null}
+			<p class="final-time-rank">(This time's rank: {finalTimeActualRank})</p>
+		{/if}
+		
+		{#if personalBestRank !== null}
+			<p class="player-rank">Your Personal Best Rank: {personalBestRank}</p>
+		{/if}
+
+		{#if isNewPersonalBest}
+			<p class="personal-best-new">🎉 New Personal Best! 🎉</p>
+		{:else if previousPersonalBestMs !== null}
+			<p class="personal-best-old">
+				Not a new PB. Your best: {formatTime(previousPersonalBestMs)}
+			</p>
+		{/if}
+
+		<div class="game-over-buttons">
+			<button class="difficulty-button game-button green" on:click={handlePlayAgainFromGameOver}>Play Again</button>
+			<button class="difficulty-button game-button orange" on:click={handleLobbyFromGameOver}>Lobby</button>
+		</div>
 	</div>
 {/if}
 
@@ -987,5 +1132,55 @@
 
 	.footer-credit a:hover {
 		text-decoration: underline;
+	}
+
+	/* Styles for Game Over Screen */
+	.game-over-modal {
+		text-align: center;
+	}
+
+	.game-over-modal h2 {
+		color: #ffcc00; /* Gold color for title */
+		margin-bottom: 20px;
+	}
+
+	.final-time {
+		font-size: 1.4em;
+		color: #fff;
+		margin-bottom: 5px;
+		font-family: 'Carter One', sans-serif;
+	}
+
+	.final-time-rank {
+		font-size: 0.9em;
+		color: #aaa;
+		margin-top: -5px;
+		margin-bottom: 15px;
+		font-family: 'Carter One', sans-serif;
+	}
+
+	.player-rank,
+	.personal-best-new,
+	.personal-best-old {
+		font-size: 1.4em;
+		color: #fff;
+		margin-bottom: 15px;
+		font-family: 'Carter One', sans-serif;
+	}
+
+	.personal-best-new {
+		color: #4CAF50; /* Green for new PB */
+		font-weight: bold;
+	}
+
+	.personal-best-old {
+		color: #f3f0ec; /* Lighter color for old PB info */
+	}
+
+	.game-over-buttons {
+		display: flex;
+		gap: 15px;
+		justify-content: center;
+		margin-top: 25px;
 	}
 </style>
