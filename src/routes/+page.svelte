@@ -856,11 +856,11 @@
 	<div class="modal {showRulesModal ? 'bounceInDown is-visible' : 'modal-leave'}">
 		<h2>Game Rules</h2>
 		<p>
-			The goal of the game is to <span style="color: #ffcc00;">reproduce the highlighted path</span> on the grid.<br />
+			The goal of the game is to <span class="rules-text-orange-outline">reproduce the highlighted path</span> on the grid.<br />
 			<u>Click and drag</u> your mouse to draw your path.<br />
-			- <strong><span style="color: #33cc33;">Speedrun</span> :</strong> Complete 15 levels as fast as possible. Your time will be recorded on the scoreboard.<br />
-			- <strong><span style="color: #cc33ff;">Infinite</span> :</strong> Play as many levels as you can. The difficulty increases randomly. (<span style="color: #ff3333;">Coming soon!</span>)<br /><br />
-			Be careful, any mistake will make you <span style="color: #ff6666;">restart the game</span> (in Speedrun) or <span style="color: #ff3333;">end the game</span> (in Infinite).
+			- <strong><span class="rules-text-green-outline">Speedrun</span> :</strong> Complete 15 levels as fast as possible. Your time will be recorded on the scoreboard.<br />
+			- <strong><span class="rules-text-purple-outline">Infinite</span> :</strong> Play as many levels as you can. The difficulty increases randomly. <span class="rules-text-red-outline">(Coming soon!)</span><br /><br />
+			Be careful, any mistake will make you <span class="rules-text-lightred-outline">restart the game</span> (in Speedrun) or <span class="rules-text-red-outline">end the game</span> (in Infinite).
 		</p>
 		<button class="difficulty-button game-button orange" on:click={toggleRulesModal}>Close</button>
 	</div>
@@ -1190,5 +1190,39 @@
 		gap: 15px;
 		justify-content: center;
 		margin-top: 25px;
+	}
+
+	/* Styles for Rules Modal Text Outlines */
+	.rules-text-orange-outline,
+	.rules-text-green-outline,
+	.rules-text-purple-outline,
+	.rules-text-red-outline,
+	.rules-text-lightred-outline {
+		color: #fff; /* Base text color for outlined words */
+		font-weight: bold; /* Ensure they are bold like the original spans */
+	}
+
+	.rules-text-orange-outline {
+		text-shadow: 2px 2px 1px #ff834c, -2px 2px 1px #ff834c, 2px -2px 1px #ff834c, -2px -2px 1px #ff834c, 0px 2px 1px #ff834c, 0px -2px 1px #ff834c, 0px 4px 1px #ff834c, 2px 4px 1px #ff834c, -2px 4px 1px #ff834c;
+	}
+
+	.rules-text-green-outline {
+		/* Using green shades from .game-button.green text-shadow */
+		text-shadow: 2px 2px 1px #348628, -2px 2px 1px #348628, 2px -2px 1px #348628, -2px -2px 1px #348628, 0px 2px 1px #348628, 0px -2px 1px #348628, 0px 4px 1px #1d4c16, 2px 4px 1px #1d4c16, -2px 4px 1px #1d4c16;
+	}
+
+	.rules-text-purple-outline {
+		/* Using purple shades from .game-button.purple text-shadow */
+		text-shadow: 2px 2px 1px #7f2886, -2px 2px 1px #642886, 2px -2px 1px #7a2886, -2px -2px 1px #862885, 0px 2px 1px #86286a, 0px -2px 1px #862885, 0px 4px 1px #4c1644, 2px 4px 1px #4c1639, -2px 4px 1px #4c163f;
+	}
+
+	.rules-text-red-outline {
+		/* Using red shades from .game-button.red text-shadow */
+		text-shadow: 2px 2px 1px #d72d21, -2px 2px 1px #d72d21, 2px -2px 1px #d72d21, -2px -2px 1px #d72d21, 0px 2px 1px #d72d21, 0px -2px 1px #d72d21, 0px 4px 1px #930704, 2px 4px 1px #930704, -2px 4px 1px #930704;
+	}
+
+	.rules-text-lightred-outline {
+		/* Using #ff6666 for the main outline and a darker red for depth */
+		text-shadow: 2px 2px 1px #ff6666, -2px 2px 1px #ff6666, 2px -2px 1px #ff6666, -2px -2px 1px #ff6666, 0px 2px 1px #ff6666, 0px -2px 1px #ff6666, 0px 4px 1px #d72d21, 2px 4px 1px #d72d21, -2px 4px 1px #d72d21;
 	}
 </style>
