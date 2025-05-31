@@ -16,11 +16,26 @@
 	let timerInterval: number | undefined = undefined; // Pour stocker l'ID de l'intervalle du timer
 	let startTime: number = 0; // To store the timestamp when the timer starts
 
-	let currentDifficulty = 0; 
+	let currentDifficulty = 0;
 	let levelsCount = 15;
-	
-	let cellPathColor = "rgba(252,225,18,0.3)"; 
-	let userCellsColor = "rgba(243,75,47,0.2)"; 
+
+	let cellPathColor = "rgba(252,225,18,0.3)";
+
+	const availableColors = [
+		{ name: 'Red', value: 'rgba(243,75,47,0.55)', display: '#F34B2FD9' }, // Initial selected
+		{ name: 'Dark Red', value: 'rgba(222,63,63,0.55)', display: '#DE3F3FD9' },
+		{ name: 'Yellow', value: 'rgba(232,191,31,0.55)', display: '#E8BF1FD9' },
+		{ name: 'Brown', value: 'rgba(160,86,61,0.55)', display: '#A0563DD9' },
+		{ name: 'Light Green', value: 'rgba(136,206,110,0.55)', display: '#88CE6ED9' },
+		{ name: 'Dark Green', value: 'rgba(33,70,12,0.55)', display: '#21460CD9' },
+		{ name: 'Light Blue', value: 'rgba(181,242,237,0.55)', display: '#B5F2EDD9' },
+		{ name: 'Blue', value: 'rgba(40,65,180,0.55)', display: '#2841B4D9' },
+		{ name: 'Purple', value: 'rgba(118,69,187,0.55)', display: '#7645BBD9' },
+		{ name: 'Pink', value: 'rgba(210,71,203,0.55)', display: '#D247CBD9' },
+		{ name: 'Beige', value: 'rgba(242,215,181,0.55)', display: '#F2D7B5D9' },
+		{ name: 'Black', value: 'rgba(0,0,0,0.55)', display: '#000000D9' }
+	];
+	let userCellsColor = availableColors[0].value; // Initialize with the first color
 
 	let canvasElement: HTMLCanvasElement; 
 	let ctx: CanvasRenderingContext2D | null = null;
@@ -213,8 +228,12 @@
 		if (gameMode === 'speedrun') {
 			startTimer();
 		}
-		initGrid(5); 
-		await generateGameLogic(); 
+		initGrid(5);
+		await generateGameLogic();
+	}
+
+	function handleColorSelect(selectedColorValue: string) {
+		userCellsColor = selectedColorValue;
 	}
 
 	function handleLobbyClick() {
@@ -643,20 +662,17 @@
 			<button class="difficulty-button game-button green" on:click={handleValidateNickname} disabled={!isNicknameValid}>OK</button>
 		</div>
 		
-		<div class="color-list"> 
+		<div class="color-list">
 			<span class="color-list-title">Choose your color</span>
-			<div class="swatch unselected" data-color="#DE3F3FD1" style="background: #DE3F3FD9"></div>
-            <div class="swatch selected" data-color="#F34B2F33" style="background: rgba(243,75,47,0.87)"></div>
-            <div class="swatch unselected" data-color="#E8BF1FD1" style="background: #E8BF1FD9"></div>
-            <div class="swatch unselected" data-color="#A0563D83" style="background: #A0563DD9"></div>
-            <div class="swatch unselected" data-color="#88CE6ED1" style="background: #88CE6ED9"></div>
-            <div class="swatch unselected" data-color="#21460CD1" style="background: #21460CD9"></div>
-            <div class="swatch unselected" data-color="#B5F2EDD1" style="background: #B5F2EDD9"></div>
-            <div class="swatch unselected" data-color="#2841B4D1" style="background: #2841B4D9"></div>
-            <div class="swatch unselected" data-color="#7645BBD1" style="background: #7645BBD9"></div>
-            <div class="swatch unselected" data-color="#D247CBD1" style="background: #D247CBD9"></div>
-            <div class="swatch unselected" data-color="#F2D7B5D1" style="background: #F2D7B5D9"></div>
-            <div class="swatch unselected" data-color="#000000D1" style="background: #000000D9"></div>
+			{#each availableColors as color}
+				<div
+					class="swatch {userCellsColor === color.value ? 'selected' : 'unselected'}"
+					data-color={color.value}
+					style="background: {color.display}"
+					on:click={() => handleColorSelect(color.value)}
+					title={color.name}
+				></div>
+			{/each}
 		</div>
 		<button class="difficulty-button game-button orange" on:click={handleLobbyClick}>Lobby</button> 
 	{/if}
@@ -798,4 +814,49 @@
 
 	/* Removed custom bounceInDown keyframes and class definition. 
 	   Relies on global bounceInDown from animate.css or similar. */
+
+	.color-list {
+		align-items: center;
+		display: flex;
+		flex-wrap: wrap; /* Allow swatches to wrap */
+		gap: 8px; /* Spacing between swatches */
+		justify-content: center; /* Center swatches if they wrap */
+		margin-bottom: 15px; /* Space below the color list */
+		margin-top: 15px; /* Space above the color list */
+	}
+
+	.color-list-title {
+		color: #fff;
+		font-family: 'Carter One', sans-serif;
+		font-size: 1.2em;
+		margin-bottom: 10px; /* Space below title */
+		text-align: center;
+		text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+		width: 100%; /* Make title span full width */
+	}
+
+	.swatch {
+		border: 2px solid transparent;
+		border-radius: 4px;
+		box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+		cursor: pointer;
+		height: 30px;
+		transition: transform 0.2s ease, border-color 0.2s ease;
+		width: 30px;
+	}
+
+	.swatch:hover {
+		transform: scale(1.1);
+	}
+
+	.swatch.selected {
+		border-color: #fff; /* White border for selected swatch */
+		box-shadow: 0 0 8px rgba(255,255,255,0.8); /* Glow effect for selected */
+		transform: scale(1.15);
+	}
+
+	.swatch.unselected {
+		/* Styles for unselected, if different from base, can go here */
+		/* For example, a slightly dimmer look or different border */
+	}
 </style>
