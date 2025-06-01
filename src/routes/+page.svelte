@@ -69,6 +69,7 @@
 	}
 	let scoreboardEntries: ScoreEntry[] = [];
 	let speedrunScoresChannel: RealtimeChannel | null = null;
+	let scoreboardPollInterval: number | undefined = undefined; // For polling
 
 	// --- Flashlight Effect Logic ---
 	let titleElement: HTMLHeadingElement | null = null;
@@ -122,6 +123,7 @@
 		if (playerName && timeMs > 0) {
 			try {
 				await saveSpeedrunScore(playerName, timeMs); // This updates isNewPersonalBest, ranks, etc.
+				await fetchScoreboard(); // Manually refresh scoreboard for the current user
 				
 				// Now trigger confetti with the updated isNewPersonalBest
 				if (typeof confetti === 'function') {
@@ -221,7 +223,6 @@
 				scoreboardEntries = [];
 			} else {
 				scoreboardEntries = data as ScoreEntry[];
-				console.log('Scoreboard fetched:', scoreboardEntries);
 			}
 		} catch (error) {
 			console.error('Exception fetching scoreboard:', error);
@@ -747,9 +748,14 @@
 				if (status === 'SUBSCRIBED') {
 					console.log('Subscribed to speedrun_scores changes!');
 				} else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-					// console.error('Subscription error or timed out:', err, 'Status:', status);
+					console.error('Subscription error or timed out:', err, 'Status:', status);
 				}
 			});
+
+		// Start polling for scoreboard updates
+		scoreboardPollInterval = window.setInterval(async () => {
+			await fetchScoreboard();
+		}, 5000); // 5000 milliseconds = 5 seconds
 	});
 
 	onDestroy(() => {
@@ -758,6 +764,10 @@
 			supabase.removeChannel(speedrunScoresChannel)
 				.then(() => console.log("Unsubscribed from speedrun_scores_changes"))
 				.catch(err => console.error("Error unsubscribing:", err));
+		}
+		// Clear the polling interval
+		if (scoreboardPollInterval !== undefined) {
+			window.clearInterval(scoreboardPollInterval);
 		}
 	});
 </script>
