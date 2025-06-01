@@ -875,7 +875,7 @@
 <!-- Game Over Screen for Speedrun -->
 {#if showGameOverScreen && gameMode === 'speedrun'}
 	<div class="modal-backdrop" on:click={handleLobbyFromGameOver}></div>
-	<div class="modal game-over-modal bounceInDown is-visible">
+	<div class="modal game-over-modal {showGameOverScreen ? 'modal-box-bounce-animation is-visible' : 'modal-leave'}">
 		<h2>Speedrun Complete!</h2>
 		<p class="final-time">Your Time: {formatTime(finalTimeMs)}</p>
 		{#if finalTimeActualRank !== null}
