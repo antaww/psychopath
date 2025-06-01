@@ -1,1 +1,576 @@
-/* Global styles can go here */ 
+/* Global styles can go here */
+.game-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.nickname-container,
+.color-list {
+    display: flex;
+    /* Ensure they are flex by default when shown */
+    /* Add other necessary styles from your original CSS if they were controlling visibility or layout beyond display:none */
+}
+
+.scoreboard {
+    align-items: center;
+    background-color: #00000082;
+    border-radius: 8px;
+    box-shadow: 0px 9px 20px rgba(0, 0, 0, 0.30), 0 15px 12px rgba(0, 0, 0, 0.22);
+    color: #fff !important;
+    /* Important pour s'assurer qu'il surcharge d'autres styles potentiels */
+    display: flex;
+    flex-flow: column;
+    font-family: 'Carter One', sans-serif;
+    font-size: 20px;
+    justify-content: center;
+    line-height: 1.5em;
+    margin-right: 10px;
+    margin-top: 5px;
+    max-width: 400px;
+    outline: none !important;
+    overflow-x: hidden;
+    padding: 8px;
+    position: absolute;
+    right: 0;
+    text-decoration: none !important;
+    text-overflow: ellipsis;
+    text-shadow: 2px 2px 1px #0066a2, -2px 2px 1px #0066a2, 2px -2px 1px #0066a2, -2px -2px 1px #0066a2, 0px 2px 1px #0066a2, 0px -2px 1px #0066a2, 0px 4px 1px #004a87, 2px 4px 1px #004a87, -2px 4px 1px #004a87;
+    top: 0;
+}
+
+.inGameButtons > .game-button {
+    text-align: center;
+    width: 150px;
+    /* Ensure a fixed width for MM:SS:CC and other texts */
+}
+
+.game-title {
+    /* Base style for the unlit text - now white */
+    color: #fff;
+    /* Base text color */
+    font-family: 'Carter One', sans-serif;
+    position: absolute;
+    /* Still absolute for page layout */
+    text-shadow: 2px 2px 1px #030102, -2px 2px 1px #030102, 2px -2px 1px #d7564a, -2px -2px 1px #d7564a, 0px 2px 1px #d7564a, 0px -2px 1px #d7564a, 0px 4px 1px #d7564a, 2px 4px 1px #d7564a, -2px 4px 1px #d7564a;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.title-lit {
+    /* Overlay for the "lit" text, clipped by flashlightStyle - now #d84c39 */
+    color: #eb7057;
+    /* Flashlight reveal color */
+    left: 0;
+    pointer-events: none;
+    /* Allows mouse events to pass through to parent h1 */
+    position: absolute;
+    text-shadow: inherit;
+    /* Inherits from .game-title */
+    top: 0;
+    white-space: nowrap;
+    /* Consistent with parent */
+    z-index: 1;
+    /* Sits on top of the base text color within the parent */
+}
+
+.game-title.in-game {
+    font-size: 2.5rem;
+    left: 20px;
+    top: 20px;
+}
+
+.game-title.lobby {
+    font-size: 6rem;
+    left: 50%;
+    text-align: center;
+    top: 25%;
+    transform: translateX(-50%);
+}
+
+.lobby-title-slide-bounce {
+    animation: slideInFromLeftWithBounce 0.8s forwards;
+    /* Using 'forwards' to keep final state */
+}
+
+@keyframes slideInFromLeftWithBounce {
+    0% {
+        opacity: 0;
+        transform: translateX(-100vw);
+        /* Start far left */
+    }
+
+    60% {
+        opacity: 1;
+        transform: translateX(-45%);
+        /* Overshoot slightly (target is -50%) */
+    }
+
+    80% {
+        transform: translateX(-52%);
+        /* Bounce back a bit */
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(-50%);
+        /* Settle at center */
+    }
+}
+
+.color-list {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    /* Allow swatches to wrap */
+    gap: 8px;
+    /* Spacing between swatches */
+    justify-content: center;
+    /* Center swatches if they wrap */
+    margin-bottom: 15px;
+    /* Space below the color list */
+    margin-top: 15px;
+    /* Space above the color list */
+}
+
+.color-list-title {
+    color: #fff;
+    font-family: 'Carter One', sans-serif;
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    /* Space below title */
+    text-align: center;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    width: 100%;
+    /* Make title span full width */
+}
+
+.swatch {
+    border: 2px solid transparent;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    height: 30px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    width: 30px;
+}
+
+.swatch:hover {
+    transform: scale(1.1);
+}
+
+.swatch.selected {
+    border-color: #fff;
+    /* White border for selected swatch */
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    /* Glow effect for selected */
+    transform: scale(1.15);
+}
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    /* Ensure it's above other content but below modal */
+}
+
+.modal {
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.85);
+    /* Darker background for white text */
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    box-sizing: border-box;
+    /* Added for more predictable sizing */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    justify-content: space-between;
+    max-width: 500px;
+    opacity: 0;
+    padding: 25px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 90%;
+    z-index: 1000;
+    /* Remove transition if animation handles it, or adjust for exit animation */
+    /* transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; */
+}
+
+.modal.is-visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.modal h2 {
+    color: #fff;
+    /* White text */
+    font-family: 'Carter One', sans-serif;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.modal p {
+    color: #fff;
+    /* White text */
+    font-family: 'Carter One', sans-serif;
+    /* Apply Carter One font */
+    line-height: 1.6;
+    margin-bottom: 20px;
+    text-align: justify;
+}
+
+.modal-enter {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.modal-leave {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+}
+
+.footer-credit {
+    bottom: 10px;
+    color: #fff;
+    font-family: 'Carter One', sans-serif;
+    font-size: 0.9rem;
+    left: 50%;
+    position: fixed;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    transform: translateX(-50%);
+    z-index: 100;
+}
+
+.footer-credit a {
+    color: #f0ad4e;
+    /* A warm color that might fit your theme */
+    text-decoration: none;
+}
+
+.footer-credit a:hover {
+    text-decoration: underline;
+}
+
+/* Styles for Game Over Screen */
+.game-over-modal {
+    text-align: center;
+}
+
+.game-over-modal h2 {
+    color: #ffcc00;
+    /* Gold color for title */
+    margin-bottom: 20px;
+}
+
+.final-time {
+    font-size: 1.4em;
+    color: #fff;
+    margin-bottom: 0px !important;
+    font-family: 'Carter One', sans-serif;
+    letter-spacing: .1em;
+    text-shadow: 2px 2px 1px #606060, -2px 2px 1px #606060, 2px -2px 1px #606060, -2px -2px 1px #606060, 0px 2px 1px #606060, 0px -2px 1px #606060, 0px 4px 1px #303030, 2px 4px 1px #303030, -2px 4px 1px #303030;
+}
+
+.final-time-rank {
+    font-size: 0.9em;
+    color: #aaa;
+    /* Greyish color */
+    margin-top: -5px;
+    /* Pull it up slightly */
+    margin-bottom: 15px;
+    font-family: 'Carter One', sans-serif;
+    letter-spacing: .05em;
+    /* Slightly less spacing for smaller text */
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.4);
+}
+
+.player-rank,
+.personal-best-new,
+.personal-best-old {
+    font-size: 1.4em;
+    color: #fff;
+    margin-bottom: 15px;
+    font-family: 'Carter One', sans-serif;
+    letter-spacing: .1em;
+    text-shadow: 2px 2px 1px #606060, -2px 2px 1px #606060, 2px -2px 1px #606060, -2px -2px 1px #606060, 0px 2px 1px #606060, 0px -2px 1px #606060, 0px 4px 1px #303030, 2px 4px 1px #303030, -2px 4px 1px #303030;
+}
+
+.personal-best-new {
+    color: #4CAF50;
+    /* Green for new PB text, orange for outline */
+    font-weight: bold;
+    /* Override the generic shadow with an orange-bordered one, like the lobby button */
+    text-shadow: 2px 2px 1px #d74c21, -2px 2px 1px #d74c21, 2px -2px 1px #d74c21, -2px -2px 1px #d74c21, 0px 2px 1px #d74c21, 0px -2px 1px #d74c21, 0px 4px 1px #932604, 2px 4px 1px #932604, -2px 4px 1px #932604;
+}
+
+.personal-best-old {
+    color: #f3f0ec;
+    /* Lighter color for old PB info */
+}
+
+.game-over-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+/* Styles for Rules Modal Text Outlines */
+.rules-text-orange-outline,
+.rules-text-green-outline,
+.rules-text-purple-outline,
+.rules-text-red-outline,
+.rules-text-lightred-outline {
+    color: #fff;
+    /* Base text color for outlined words */
+    font-weight: bold;
+    /* Ensure they are bold like the original spans */
+}
+
+.rules-text-orange-outline {
+    text-shadow: 2px 2px 1px #ff834c, -2px 2px 1px #ff834c, 2px -2px 1px #ff834c, -2px -2px 1px #ff834c, 0px 2px 1px #ff834c, 0px -2px 1px #ff834c, 0px 4px 1px #ff834c, 2px 4px 1px #ff834c, -2px 4px 1px #ff834c;
+}
+
+.rules-text-green-outline {
+    /* Using green shades from .game-button.green text-shadow */
+    text-shadow: 2px 2px 1px #348628, -2px 2px 1px #348628, 2px -2px 1px #348628, -2px -2px 1px #348628, 0px 2px 1px #348628, 0px -2px 1px #348628, 0px 4px 1px #1d4c16, 2px 4px 1px #1d4c16, -2px 4px 1px #1d4c16;
+}
+
+.rules-text-purple-outline {
+    /* Using purple shades from .game-button.purple text-shadow */
+    text-shadow: 2px 2px 1px #7f2886, -2px 2px 1px #642886, 2px -2px 1px #7a2886, -2px -2px 1px #862885, 0px 2px 1px #86286a, 0px -2px 1px #862885, 0px 4px 1px #4c1644, 2px 4px 1px #4c1639, -2px 4px 1px #4c163f;
+}
+
+.rules-text-red-outline {
+    /* Using red shades from .game-button.red text-shadow */
+    text-shadow: 2px 2px 1px #d72d21, -2px 2px 1px #d72d21, 2px -2px 1px #d72d21, -2px -2px 1px #d72d21, 0px 2px 1px #d72d21, 0px -2px 1px #d72d21, 0px 4px 1px #930704, 2px 4px 1px #930704, -2px 4px 1px #930704;
+}
+
+.rules-text-lightred-outline {
+    /* Using #ff6666 for the main outline and a darker red for depth */
+    text-shadow: 2px 2px 1px #ff6666, -2px 2px 1px #ff6666, 2px -2px 1px #ff6666, -2px -2px 1px #ff6666, 0px 2px 1px #ff6666, 0px -2px 1px #ff6666, 0px 4px 1px #d72d21, 2px 4px 1px #d72d21, -2px 4px 1px #d72d21;
+}
+
+.inGameButtons > .game-button.purple,
+.game-info > .game-button.yellow {
+    /* Styles for Timer and Level displays if they used to be .difficulty-button */
+    /* These are not interactive buttons, so no hover/active states needed from .game-button directly */
+    /* They primarily use .game-button for text, shadow, bg color, padding, border-radius */
+    min-width: 9ch;
+    text-align: center;
+    /* user-select: none; is fine for these display elements */
+    cursor: default;
+    /* They are not clickable */
+}
+
+.game-info > .game-button.yellow {
+    /* Specific styles for the Level button if needed, or adjust the generic one above */
+}
+
+.inGameButtons > .game-button.purple:hover,
+.game-info > .game-button.yellow:not(.disable-hover-effect):hover {
+    transform: none;
+    /* Override hover effect from .game-button */
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2), 0px 2px 2px rgba(0, 0, 0, 0.15);
+    /* Keep base shadow */
+}
+
+/* Style for the timer button when hover is disabled */
+.inGameButtons > .game-button.purple.disable-hover-effect:hover {
+    background: repeating-linear-gradient(45deg, #cf40d4, #c840d4 5px, #ba3fcc 5px, #cc3fa9 10px);
+    box-shadow: 0 6px 0 #862885, 0 8px 1px 1px rgba(0, 0, 0, .3), 0 10px 0 5px #6d206c, 0 12px 0 5px #642e82, 0 15px 0 5px #48164c, 0 15px 1px 6px rgba(0, 0, 0, .3);
+    transform: none;
+    /* Explicitly set cursor if it was changed by other .game-button rules */
+    cursor: default;
+}
+
+/* Keep .bounceInDown and other styles as they are, unless Button component makes them redundant */
+/* The .bounceInDown in this file might still be used by modals or other elements not converted to Button */
+
+.scoreboard-page {
+    align-items: center;
+    color: #ecf0f1;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Carter One', sans-serif;
+    height: 100vh;
+    justify-content: flex-start;
+    overflow: hidden;
+    /* Prevent whole page scroll */
+    padding-top: 20px;
+    width: 100vw;
+}
+
+.scoreboard-controls {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    width: 80%;
+    max-width: 800px;
+    /* Max width for controls */
+}
+
+.search-container {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    /* Space between input and button */
+}
+
+.scoreboard-title {
+    color: #fff;
+    font-size: 3em;
+    margin-bottom: 20px;
+    text-align: center;
+    text-shadow: 3px 3px 0px #0066a2, -3px 3px 0px #0066a2, 3px -3px 0px #0066a2, -3px -3px 0px #0066a2, 0px 3px 0px #0066a2, 0px -3px 0px #0066a2, 0px 6px 0px #004a87, 3px 6px 0px #004a87, -3px 6px 0px #004a87;
+}
+
+.scoreboard-table-container {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 6px 10px rgba(0, 0, 0, 0.25);
+    max-height: 60vh;
+    /* Or adjust as needed */
+    overflow-y: auto;
+    padding: 20px;
+    width: 80%;
+    max-width: 800px;
+    /* Consistent max-width */
+}
+
+.scoreboard-table {
+    border-collapse: collapse;
+    color: #ecf0f1;
+    font-size: 1.1em;
+    text-align: left;
+    width: 100%;
+}
+
+.scoreboard-table th,
+.scoreboard-table td {
+    border-bottom: 1px solid #7f8c8d;
+    padding: 12px 15px;
+}
+
+.scoreboard-table th {
+    color: #ffffff;
+    font-size: 1.2em;
+    text-shadow: 2px 2px 0px #0066a2, -2px 2px 0px #0066a2, 2px -2px 0px #0066a2, -2px -2px 0px #0066a2, 0px 2px 0px #0066a2, 0px -2px 0px #0066a2, 0px 3px 0px #004a87, 2px 3px 0px #004a87, -2px 3px 0px #004a87;
+
+}
+
+.scoreboard-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.scoreboard-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.pagination-controls {
+    align-items: center;
+    display: flex;
+    gap: 15px;
+    /* Spacing between buttons and text */
+    justify-content: center;
+    margin-top: 30px;
+    /* More space above pagination */
+}
+
+.pagination-controls span {
+    font-size: 1.2em;
+    text-shadow: 1px 1px 0px #004a87;
+}
+
+.loading-text {
+    font-size: 1.5em;
+    margin-top: 50px;
+    text-shadow: 2px 2px 0px #004a87;
+}
+
+/* General bounceInDown class for reusable animation */
+.bounceInDown {
+    animation: bounceInDown 0.75s;
+    /* This will be applied by the component now if animation prop is set */
+}
+
+@keyframes bounceInDown {
+
+    0%,
+    60%,
+    75%,
+    90%,
+    100% {
+        transition-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+    }
+
+    0% {
+        opacity: 0;
+        transform: translate3d(0, -3000px, 0);
+    }
+
+    60% {
+        opacity: 1;
+        transform: translate3d(0, 25px, 0);
+    }
+
+    75% {
+        transform: translate3d(0, -10px, 0);
+    }
+
+    90% {
+        transform: translate3d(0, 5px, 0);
+    }
+
+    100% {
+        transform: none;
+    }
+}
+
+/* New animation for the modal box itself */
+.modal.modal-box-bounce-animation.is-visible {
+    animation: modal-box-bounce-keyframes 0.75s forwards;
+    /* `forwards` keeps the state of the last keyframe */
+}
+
+@keyframes modal-box-bounce-keyframes {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -150vh) scale(0.3);
+        /* Start way above and small */
+        animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+        /* Ease out */
+    }
+
+    60% {
+        opacity: 1;
+        transform: translate(-50%, calc(-50% + 25px)) scale(1.05);
+        /* Bounce down past target, slightly larger */
+        animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+    }
+
+    75% {
+        transform: translate(-50%, calc(-50% - 10px)) scale(0.98);
+        /* Bounce up slightly */
+        animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+    }
+
+    90% {
+        transform: translate(-50%, calc(-50% + 5px)) scale(1.02);
+        /* Settle down */
+        animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        /* Final centered position */
+    }
+}

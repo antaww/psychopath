@@ -9,6 +9,7 @@
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { supabase } from '$lib/supabaseClient'; // Importer le client Supabase
 	import type { RealtimeChannel } from '@supabase/supabase-js';
+	import Button from '$lib/components/Button.svelte'; // Import the new Button component
 
 	let nickname = '';
 	let gameMode = ''; // 'speedrun' or 'infinite'
@@ -789,9 +790,10 @@
 <div class="difficulty">
 	{#if !isPlaying && gameMode === ''}
 		<div class="buttons-container">
-			<button class="difficulty-button game-button green bounceInDown" on:click={handlePlaySpeedrun}>Speedrun</button>
-			<!-- <button class="difficulty-button game-button green bounceInDown" on:click={handlePlayInfinite}>Infinite</button> -->
-			<button class="difficulty-button game-button blue bounceInDown" on:click={toggleRulesModal}>Rules</button>
+			<Button text="Speedrun" color="green" onClick={handlePlaySpeedrun} />
+			<!-- <Button text="Infinite" color="green" onClick={handlePlayInfinite} /> -->
+			<Button text="Rules" color="blue" onClick={toggleRulesModal} />
+			<Button text="Scoreboard" color="green" href="/scoreboard" />
 		</div>
 	{/if}
 
@@ -799,13 +801,13 @@
 		<div class="nickname-container"> 
 			<input 
 				type="text" 
-				class="difficulty-button game-button purple" 
+				class="difficulty-button game-button purple"
 				value={nickname} 
 				on:input={handleNicknameInput}
 				placeholder="Enter your nickname" 
 				maxlength="15"
 			>
-			<button class="difficulty-button game-button green" on:click={handleValidateNickname} disabled={!isNicknameValid}>OK</button>
+			<Button text="OK" color="green" onClick={handleValidateNickname} disabled={!isNicknameValid} animation="" />
 		</div>
 		
 		<div class="color-list">
@@ -820,21 +822,22 @@
 				></div>
 			{/each}
 		</div>
-		<button class="difficulty-button game-button orange" on:click={handleLobbyClick}>Lobby</button> 
+		<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" /> 
 	{/if}
 
 	{#if isPlaying}
 		<div class="inGameButtons">
-			<div class="timer difficulty-button game-button purple">{formatTime(timerValue)}</div> 
-			<button class="difficulty-button game-button orange" on:click={handleLobbyClick}>Lobby</button> 
-			<button class="difficulty-button game-button red" on:click={handleResetClick}>Reset</button> 
+			<!-- <div class="timer game-button purple">{formatTime(timerValue)}</div> -->
+			<Button text={formatTime(timerValue)} color="purple" animation="" disableHoverEffect={true} />
+			<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" /> 
+			<Button text="Reset" color="red" onClick={handleResetClick} animation="" /> 
 		</div>
 	{/if}
 </div>
 
 <div class="game-info">
 	{#if isPlaying}
-		<div class="level difficulty-button game-button yellow">Level {currentLevel}</div>
+		<Button text="Level {currentLevel}" color="yellow" animation="" disableHoverEffect={true} additionalClasses="level difficulty-button" />
 		<canvas 
 			class="grid" 
 			bind:this={canvasElement} 
@@ -856,7 +859,7 @@
 
 {#if showRulesModal}
 	<div class="modal-backdrop" on:click={toggleRulesModal}></div>
-	<div class="modal {showRulesModal ? 'bounceInDown is-visible' : 'modal-leave'}">
+	<div class="modal {showRulesModal ? 'modal-box-bounce-animation is-visible' : 'modal-leave'}">
 		<h2>Game Rules</h2>
 		<p>
 			The goal of the game is to <span class="rules-text-orange-outline">reproduce the highlighted path</span> on the grid.<br />
@@ -865,7 +868,7 @@
 			- <strong><span class="rules-text-purple-outline">Infinite</span> :</strong> Play as many levels as you can. The difficulty increases randomly. <span class="rules-text-red-outline">(Coming soon!)</span><br /><br />
 			Be careful, any mistake will make you <span class="rules-text-lightred-outline">restart the game</span> (in Speedrun) or <span class="rules-text-red-outline">end the game</span> (in Infinite).
 		</p>
-		<button class="difficulty-button game-button orange" on:click={toggleRulesModal}>Close</button>
+		<Button text="Close" color="orange" onClick={toggleRulesModal} animation="" />
 	</div>
 {/if}
 
@@ -892,8 +895,8 @@
 		{/if}
 
 		<div class="game-over-buttons">
-			<button class="difficulty-button game-button green" on:click={handlePlayAgainFromGameOver}>Play Again</button>
-			<button class="difficulty-button game-button orange" on:click={handleLobbyFromGameOver}>Lobby</button>
+			<Button text="Play Again" color="green" onClick={handlePlayAgainFromGameOver} animation="bounceInDown" />
+			<Button text="Lobby" color="orange" onClick={handleLobbyFromGameOver} animation="bounceInDown" />
 		</div>
 	</div>
 {/if}
@@ -902,316 +905,4 @@
 	Created by <a href="https://github.com/antaww" target="_blank" rel="noopener noreferrer">antaww</a>
 </div>
 
-<style>
-	.nickname-container,
-    .color-list {
-        display: flex; /* Ensure they are flex by default when shown */
-        /* Add other necessary styles from your original CSS if they were controlling visibility or layout beyond display:none */
-    }
-	.scoreboard {
-		align-items: center;
-		background-color: #00000082;
-		border-radius: 8px;
-		box-shadow: 0px 9px 20px rgba(0, 0, 0, 0.30), 0 15px 12px rgba(0, 0, 0, 0.22);
-		color: #fff !important; /* Important pour s'assurer qu'il surcharge d'autres styles potentiels */
-		display: flex;
-		flex-flow: column;
-		font-family: 'Carter One', sans-serif;
-		font-size: 20px;
-		justify-content: center;
-		line-height: 1.5em;
-		margin-right: 10px;
-		margin-top: 5px;
-		max-width: 400px;
-		outline: none !important;
-		overflow-x: hidden;
-		padding: 8px;
-		position: absolute;
-		right: 0;
-		text-decoration: none !important;
-		text-overflow: ellipsis;
-		text-shadow: 2px 2px 1px #0066a2, -2px 2px 1px #0066a2, 2px -2px 1px #0066a2, -2px -2px 1px #0066a2, 0px 2px 1px #0066a2, 0px -2px 1px #0066a2, 0px 4px 1px #004a87, 2px 4px 1px #004a87, -2px 4px 1px #004a87;
-		top: 0;
-	}
 
-	.inGameButtons > .difficulty-button {
-		min-width: 9ch; /* Ensure a minimum width for MM:SS:CC and other texts */
-		text-align: center;
-	}
-
-	.nickname-container button:disabled {
-		cursor: not-allowed;
-		opacity: 0.6;
-	}
-
-	.game-title {
-		/* Base style for the unlit text - now white */
-		color: #fff; /* Base text color */
-		font-family: 'Carter One', sans-serif;
-		position: absolute; /* Still absolute for page layout */
-		text-shadow: 2px 2px 1px #030102, -2px 2px 1px #030102, 2px -2px 1px #d7564a, -2px -2px 1px #d7564a, 0px 2px 1px #d7564a, 0px -2px 1px #d7564a, 0px 4px 1px #d7564a, 2px 4px 1px #d7564a, -2px 4px 1px #d7564a;
-		white-space: nowrap;
-		z-index: 10;
-	}
-
-	.title-lit {
-		/* Overlay for the "lit" text, clipped by flashlightStyle - now #d84c39 */
-		color: #eb7057; /* Flashlight reveal color */
-		left: 0;
-		pointer-events: none; /* Allows mouse events to pass through to parent h1 */
-		position: absolute;
-		text-shadow: inherit; /* Inherits from .game-title */
-		top: 0;
-		white-space: nowrap; /* Consistent with parent */
-		z-index: 1; /* Sits on top of the base text color within the parent */
-	}
-
-	.game-title.in-game {
-		font-size: 2.5rem;
-		left: 20px;
-		top: 20px;
-	}
-
-	.game-title.lobby {
-		font-size: 6rem;
-		left: 50%;
-		text-align: center;
-		top: 25%;
-		transform: translateX(-50%);
-	}
-
-	.lobby-title-slide-bounce {
-		animation: slideInFromLeftWithBounce 0.8s forwards; /* Using 'forwards' to keep final state */
-	}
-
-	@keyframes slideInFromLeftWithBounce {
-		0% {
-			opacity: 0;
-			transform: translateX(-100vw); /* Start far left */
-		}
-		60% {
-			opacity: 1;
-			transform: translateX(-45%); /* Overshoot slightly (target is -50%) */
-		}
-		80% {
-			transform: translateX(-52%); /* Bounce back a bit */
-		}
-		100% {
-			opacity: 1;
-			transform: translateX(-50%); /* Settle at center */
-		}
-	}
-
-	.color-list {
-		align-items: center;
-		display: flex;
-		flex-wrap: wrap; /* Allow swatches to wrap */
-		gap: 8px; /* Spacing between swatches */
-		justify-content: center; /* Center swatches if they wrap */
-		margin-bottom: 15px; /* Space below the color list */
-		margin-top: 15px; /* Space above the color list */
-	}
-
-	.color-list-title {
-		color: #fff;
-		font-family: 'Carter One', sans-serif;
-		font-size: 1.2em;
-		margin-bottom: 10px; /* Space below title */
-		text-align: center;
-		text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-		width: 100%; /* Make title span full width */
-	}
-
-	.swatch {
-		border: 2px solid transparent;
-		border-radius: 4px;
-		box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-		cursor: pointer;
-		height: 30px;
-		transition: transform 0.2s ease, border-color 0.2s ease;
-		width: 30px;
-	}
-
-	.swatch:hover {
-		transform: scale(1.1);
-	}
-
-	.swatch.selected {
-		border-color: #fff; /* White border for selected swatch */
-		box-shadow: 0 0 8px rgba(255,255,255,0.8); /* Glow effect for selected */
-		transform: scale(1.15);
-	}
-
-	.modal-backdrop {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100vw;
-		height: 100vh;
-		background-color: rgba(0, 0, 0, 0.5);
-		z-index: 999; /* Ensure it's above other content but below modal */
-	}
-
-	.modal {
-		align-items: center;
-		background-color: rgba(0, 0, 0, 0.85); /* Darker background for white text */
-		border-radius: 10px;
-		box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-		box-sizing: border-box; /* Added for more predictable sizing */
-		display: flex;
-		flex-direction: column;
-		gap: 15px;
-		justify-content: space-between;
-		max-width: 500px;
-		opacity: 0;
-		padding: 25px;
-		position: fixed;
-		transform: translate(-50%, -50%) scale(0.9);
-		transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-		width: 90%;
-		z-index: 1000;
-	}
-
-	.modal.is-visible {
-		opacity: 1;
-		transform: translate(-50%, -50%) scale(1);
-	}
-
-	.modal h2 {
-		color: #fff; /* White text */
-		font-family: 'Carter One', sans-serif;
-		margin-bottom: 10px;
-		text-align: center;
-	}
-
-	.modal p {
-		color: #fff; /* White text */
-		font-family: 'Carter One', sans-serif; /* Apply Carter One font */
-		line-height: 1.6;
-		margin-bottom: 20px;
-		text-align: justify;
-	}
-
-	.modal-enter {
-		opacity: 1;
-		transform: translate(-50%, -50%) scale(1);
-	}
-
-	.modal-leave {
-		opacity: 0;
-		transform: translate(-50%, -50%) scale(0.9);
-	}
-
-	.footer-credit {
-		bottom: 10px;
-		color: #fff;
-		font-family: 'Carter One', sans-serif;
-		font-size: 0.9rem;
-		left: 50%;
-		position: fixed;
-		text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-		transform: translateX(-50%);
-		z-index: 100;
-	}
-
-	.footer-credit a {
-		color: #f0ad4e; /* A warm color that might fit your theme */
-		text-decoration: none;
-	}
-
-	.footer-credit a:hover {
-		text-decoration: underline;
-	}
-
-	/* Styles for Game Over Screen */
-	.game-over-modal {
-		text-align: center;
-	}
-
-	.game-over-modal h2 {
-		color: #ffcc00; /* Gold color for title */
-		margin-bottom: 20px;
-	}
-
-	.final-time {
-		font-size: 1.4em;
-		color: #fff;
-		margin-bottom: 0px !important;
-		font-family: 'Carter One', sans-serif;
-		letter-spacing: .1em;
-		text-shadow: 2px 2px 1px #606060, -2px 2px 1px #606060, 2px -2px 1px #606060, -2px -2px 1px #606060, 0px 2px 1px #606060, 0px -2px 1px #606060, 0px 4px 1px #303030, 2px 4px 1px #303030, -2px 4px 1px #303030;
-	}
-
-	.final-time-rank {
-		font-size: 0.9em;
-		color: #aaa; /* Greyish color */
-		margin-top: -5px; /* Pull it up slightly */
-		margin-bottom: 15px;
-		font-family: 'Carter One', sans-serif;
-		letter-spacing: .05em; /* Slightly less spacing for smaller text */
-		text-shadow: 1px 1px 1px rgba(0,0,0,0.4);
-	}
-
-	.player-rank,
-	.personal-best-new,
-	.personal-best-old {
-		font-size: 1.4em;
-		color: #fff;
-		margin-bottom: 15px;
-		font-family: 'Carter One', sans-serif;
-		letter-spacing: .1em;
-		text-shadow: 2px 2px 1px #606060, -2px 2px 1px #606060, 2px -2px 1px #606060, -2px -2px 1px #606060, 0px 2px 1px #606060, 0px -2px 1px #606060, 0px 4px 1px #303030, 2px 4px 1px #303030, -2px 4px 1px #303030;
-	}
-
-	.personal-best-new {
-		color: #4CAF50; /* Green for new PB text, orange for outline */
-		font-weight: bold;
-		/* Override the generic shadow with an orange-bordered one, like the lobby button */
-		text-shadow: 2px 2px 1px #d74c21, -2px 2px 1px #d74c21, 2px -2px 1px #d74c21, -2px -2px 1px #d74c21, 0px 2px 1px #d74c21, 0px -2px 1px #d74c21, 0px 4px 1px #932604, 2px 4px 1px #932604, -2px 4px 1px #932604;
-	}
-
-	.personal-best-old {
-		color: #f3f0ec; /* Lighter color for old PB info */
-	}
-
-	.game-over-buttons {
-		display: flex;
-		gap: 15px;
-		justify-content: center;
-		margin-top: 25px;
-	}
-
-	/* Styles for Rules Modal Text Outlines */
-	.rules-text-orange-outline,
-	.rules-text-green-outline,
-	.rules-text-purple-outline,
-	.rules-text-red-outline,
-	.rules-text-lightred-outline {
-		color: #fff; /* Base text color for outlined words */
-		font-weight: bold; /* Ensure they are bold like the original spans */
-	}
-
-	.rules-text-orange-outline {
-		text-shadow: 2px 2px 1px #ff834c, -2px 2px 1px #ff834c, 2px -2px 1px #ff834c, -2px -2px 1px #ff834c, 0px 2px 1px #ff834c, 0px -2px 1px #ff834c, 0px 4px 1px #ff834c, 2px 4px 1px #ff834c, -2px 4px 1px #ff834c;
-	}
-
-	.rules-text-green-outline {
-		/* Using green shades from .game-button.green text-shadow */
-		text-shadow: 2px 2px 1px #348628, -2px 2px 1px #348628, 2px -2px 1px #348628, -2px -2px 1px #348628, 0px 2px 1px #348628, 0px -2px 1px #348628, 0px 4px 1px #1d4c16, 2px 4px 1px #1d4c16, -2px 4px 1px #1d4c16;
-	}
-
-	.rules-text-purple-outline {
-		/* Using purple shades from .game-button.purple text-shadow */
-		text-shadow: 2px 2px 1px #7f2886, -2px 2px 1px #642886, 2px -2px 1px #7a2886, -2px -2px 1px #862885, 0px 2px 1px #86286a, 0px -2px 1px #862885, 0px 4px 1px #4c1644, 2px 4px 1px #4c1639, -2px 4px 1px #4c163f;
-	}
-
-	.rules-text-red-outline {
-		/* Using red shades from .game-button.red text-shadow */
-		text-shadow: 2px 2px 1px #d72d21, -2px 2px 1px #d72d21, 2px -2px 1px #d72d21, -2px -2px 1px #d72d21, 0px 2px 1px #d72d21, 0px -2px 1px #d72d21, 0px 4px 1px #930704, 2px 4px 1px #930704, -2px 4px 1px #930704;
-	}
-
-	.rules-text-lightred-outline {
-		/* Using #ff6666 for the main outline and a darker red for depth */
-		text-shadow: 2px 2px 1px #ff6666, -2px 2px 1px #ff6666, 2px -2px 1px #ff6666, -2px -2px 1px #ff6666, 0px 2px 1px #ff6666, 0px -2px 1px #ff6666, 0px 4px 1px #d72d21, 2px 4px 1px #d72d21, -2px 4px 1px #d72d21;
-	}
-</style>
