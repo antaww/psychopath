@@ -96,6 +96,7 @@
 
 	// --- Fonctions Supabase pour les scores ---
 	async function fetchPlayerRank(playerName: string, scoreToRankMs: number): Promise<number | null> {
+		const lowerPlayerName = playerName.toLowerCase();
 		try {
 			const { data, error, count } = await supabase
 				.from('speedrun_scores')
@@ -146,25 +147,26 @@
 			console.log('Player name is empty, score not saved.');
 			return;
 		}
+		const lowerPlayerName = playerName.toLowerCase();
 
 		try {
 			// 1. Fetch the existing score
 			const { data: existingScoreData, error: fetchError } = await supabase
 				.from('speedrun_scores')
 				.select('time_ms')
-				.eq('pseudo', playerName)
+				.eq('pseudo', lowerPlayerName)
 				.single(); // We expect 0 or 1 result
 
 			// PGRST116 means "Query returned 0 rows", which is normal if the player doesn't have a score yet.
 			if (fetchError && fetchError.code !== 'PGRST116') { 
 				console.error('Error fetching existing score:', fetchError);
 				// Try to get rank of current time even if fetching existing score fails
-				finalTimeActualRank = await fetchPlayerRank(playerName, timeInMilliseconds);
+				finalTimeActualRank = await fetchPlayerRank(lowerPlayerName, timeInMilliseconds);
 				return;
 			}
 
 			// 1. Always fetch the rank of the time they just got.
-			finalTimeActualRank = await fetchPlayerRank(playerName, timeInMilliseconds);
+			finalTimeActualRank = await fetchPlayerRank(lowerPlayerName, timeInMilliseconds);
 
 			const existingTimeMs = existingScoreData?.time_ms;
 			previousPersonalBestMs = existingTimeMs ?? null; // Store previous PB regardless
@@ -174,7 +176,7 @@
 				isNewPersonalBest = true;
 				const { data, error: upsertError } = await supabase
 					.from('speedrun_scores')
-					.upsert({ pseudo: playerName, time_ms: timeInMilliseconds }, { onConflict: 'pseudo' });
+					.upsert({ pseudo: lowerPlayerName, time_ms: timeInMilliseconds }, { onConflict: 'pseudo' });
 
 				if (upsertError) {
 					console.error('Error saving/updating speedrun score:', upsertError);
@@ -186,10 +188,10 @@
 				}
 			} else {
 				isNewPersonalBest = false;
-				console.log(`New score (${formatTime(timeInMilliseconds)}) is not better than existing score (${formatTime(existingTimeMs)}) for ${playerName}. Not updating.`);
+				console.log(`New score (${formatTime(timeInMilliseconds)}) is not better than existing score (${formatTime(existingTimeMs)}) for ${lowerPlayerName}. Not updating.`);
 				// Score not updated, so PB rank is based on their existing best score
 				if (existingTimeMs !== undefined) {
-					personalBestRank = await fetchPlayerRank(playerName, existingTimeMs);
+					personalBestRank = await fetchPlayerRank(lowerPlayerName, existingTimeMs);
 				} else {
 					// This case should ideally not happen if !isNewPersonalBest, means no existing score but also not a new best.
 					// For safety, set personalBestRank to the current time's rank, as it's the only score we know.
@@ -200,7 +202,7 @@
 			console.error('Exception in saveSpeedrunScore:', error);
 			// Attempt to fetch rank for current time even on general exception
 			if (timeInMilliseconds > 0 && finalTimeActualRank === null) { // Check if not already set
-				finalTimeActualRank = await fetchPlayerRank(playerName, timeInMilliseconds);
+				finalTimeActualRank = await fetchPlayerRank(lowerPlayerName, timeInMilliseconds);
 			}
 		}
 	}
