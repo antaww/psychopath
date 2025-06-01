@@ -793,7 +793,7 @@
 			<Button text="Speedrun" color="green" onClick={handlePlaySpeedrun} />
 			<!-- <Button text="Infinite" color="green" onClick={handlePlayInfinite} /> -->
 			<Button text="Rules" color="blue" onClick={toggleRulesModal} />
-			<Button text="Scoreboard" color="green" href="/scoreboard" />
+			<Button text="Scoreboard" color="orange" href="/scoreboard" />
 		</div>
 	{/if}
 
