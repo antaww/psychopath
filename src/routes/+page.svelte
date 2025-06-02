@@ -885,12 +885,12 @@
 		<div class="game-mode-selection-area" style="display: flex; flex-direction: column; align-items: center;">
 			<div class="game-mode-row" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
 				<Button text="<" color="blue" onClick={showPreviousMode} additionalClasses="swipe-arrow prev-arrow" animation="" />
-				<div class="game-mode-swiper-item-container" style="overflow: hidden; display: flex; justify-content: center; align-items: center; width: 180px; /* Adjust width to fit one button */ position: relative; min-height: 50px; /* Ensure space for the button */ margin-left: 10px; margin-right: 10px;">
+				<div class="game-mode-swiper-item-container" style="display: flex; justify-content: center; align-items: center; width: 180px; /* Adjust width to fit one button */ position: relative; min-height: 50px; /* Ensure space for the button */ margin-left: 10px; margin-right: 10px;">
 					{#key currentGameModeIndex}
 						<div class="game-mode-item-wrapper"
 							in:fly="{{ x: slideInX, duration: 300 }}"
 							out:fly="{{ x: slideOutX, duration: 300 }}"
-							style="display: flex; justify-content: center; width: 100%;">
+							style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; justify-content: center; align-items: center; width: 100%;">
 							<Button
 								text={gameModeOptions[currentGameModeIndex].text}
 								color={gameModeOptions[currentGameModeIndex].color}
