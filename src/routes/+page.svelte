@@ -103,6 +103,15 @@
 	let speedrunScoresChannel: RealtimeChannel | null = null;
 	let scoreboardPollInterval: number | undefined = undefined; // For polling
 
+	function handleModalBackdropKeydown(handlerFunction: () => void) {
+		return (event: KeyboardEvent) => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				event.preventDefault(); // Prevent default space scroll / enter form submission
+				handlerFunction();
+			}
+		};
+	}
+
 	// --- Flashlight Effect Logic ---
 	let titleElement: HTMLHeadingElement | null = null;
 	let flashlightStyle = 'clip-path: circle(0px at 0px 0px);';
@@ -949,13 +958,15 @@
 		<div class="color-list">
 			<span class="color-list-title">Choose your color</span>
 			{#each availableColors as color}
-				<div
+				<button
+					type="button"
 					class="swatch {userCellsColor === color.value ? 'selected' : 'unselected'}"
 					data-color={color.value}
-					style="background: {color.display}"
+					style="background: {color.display}; border: none; padding: 0; cursor: pointer;"
 					on:click={() => handleColorSelect(color.value)}
 					title={color.name}
-				></div>
+					aria-label={color.name + " color"}
+				></button>
 			{/each}
 		</div>
 		<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" /> 
@@ -990,6 +1001,8 @@
 			on:mouseup={handleCanvasMouseUp}
 			on:mousemove={handleCanvasMouseMove}
 			on:mouseout={handleCanvasMouseOut}
+			on:blur={handleCanvasMouseOut}
+			tabindex="0"
 		></canvas> 
 	{/if}
 </div>
@@ -1001,7 +1014,14 @@
 {/if} -->
 
 {#if showRulesModal}
-	<div class="modal-backdrop" on:click={toggleRulesModal}></div>
+	<div 
+		class="modal-backdrop" 
+		on:click={toggleRulesModal}
+		role="button"
+		tabindex="0"
+		on:keydown={handleModalBackdropKeydown(toggleRulesModal)}
+		aria-label="Close rules modal"
+	></div>
 	<div class="modal {showRulesModal ? 'modal-box-bounce-animation is-visible' : 'modal-leave'}">
 		<h2>Game Rules</h2>
 		<p>
@@ -1018,7 +1038,14 @@
 
 <!-- Game Over Screen for Speedrun -->
 {#if showGameOverScreen && gameMode === 'speedrun'}
-	<div class="modal-backdrop" on:click={handleLobbyFromGameOver}></div>
+	<div 
+		class="modal-backdrop" 
+		on:click={handleLobbyFromGameOver}
+		role="button"
+		tabindex="0"
+		on:keydown={handleModalBackdropKeydown(handleLobbyFromGameOver)}
+		aria-label="Close game over modal"
+	></div>
 	<div class="modal game-over-modal {showGameOverScreen ? 'modal-box-bounce-animation is-visible' : 'modal-leave'}">
 		<h2>Speedrun Complete!</h2>
 		<p class="final-time">Your Time: {formatTime(finalTimeMs)}</p>
