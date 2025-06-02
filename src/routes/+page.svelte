@@ -7,6 +7,7 @@
 <script lang="ts">
 	import '$lib/logger';
 	import { onMount, onDestroy, tick } from 'svelte';
+	import { fly } from 'svelte/transition'; // ADDED: For swipe animation
 	import { supabase } from '$lib/supabaseClient'; // Importer le client Supabase
 	import type { RealtimeChannel } from '@supabase/supabase-js';
 	import Button from '$lib/components/Button.svelte'; // Import the new Button component
@@ -53,6 +54,36 @@
 	let selectedTrainingDifficulty: number = 5; // Default difficulty for training mode (5x5 grid)
 
 	let showRulesModal = false;
+
+	// Game Mode Swiper Logic - START
+	const gameModeOptions = [
+		{ id: 'speedrun', text: 'Speedrun', color: 'green' as const, handlerFunction: handlePlaySpeedrun },
+		{ id: 'training', text: 'Training', color: 'lightorange' as const, handlerFunction: handlePlayTraining }
+		// { id: 'infinite', text: 'Infinite', color: 'green', handler: handlePlayInfinite } // Can be added later
+	];
+	let currentGameModeIndex = 0;
+	let slideInX = 0; // Initial animation state (0 means no slide for the first item)
+	let slideOutX = 0; // Initial animation state
+
+	async function showNextMode() {
+		slideInX = 300;    // New element enters from the right
+		slideOutX = -300;  // Old element exits to the left
+		await tick(); // Ensures DOM updates with new slide directions before index change
+		currentGameModeIndex = (currentGameModeIndex + 1) % gameModeOptions.length;
+	}
+
+	async function showPreviousMode() {
+		slideInX = -300;   // New element enters from the left
+		slideOutX = 300;   // Old element exits to the right
+		await tick(); // Ensures DOM updates with new slide directions before index change
+		currentGameModeIndex = (currentGameModeIndex - 1 + gameModeOptions.length) % gameModeOptions.length;
+	}
+
+	function selectDisplayedGameMode() {
+		const selectedMode = gameModeOptions[currentGameModeIndex];
+		selectedMode.handlerFunction(); // This will call handlePlaySpeedrun or handlePlayTraining
+	}
+	// Game Mode Swiper Logic - END
 
 	// Game Over Screen State
 	let showGameOverScreen = false;
@@ -851,12 +882,31 @@
 
 <div class="difficulty">
 	{#if !isPlaying && gameMode === ''}
-		<div class="buttons-container">
-			<Button text="Speedrun" color="green" onClick={handlePlaySpeedrun} />
-			<Button text="Training" color="lightorange" onClick={handlePlayTraining} />
-			<!-- <Button text="Infinite" color="green" onClick={handlePlayInfinite} /> -->
-			<Button text="Rules" color="blue" onClick={toggleRulesModal} />
-			<Button text="Scoreboard" color="orange" href="/scoreboard" />
+		<div class="game-mode-selection-area" style="display: flex; flex-direction: column; align-items: center;">
+			<div class="game-mode-row" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+				<Button text="<" color="blue" onClick={showPreviousMode} additionalClasses="swipe-arrow prev-arrow" animation="" />
+				<div class="game-mode-swiper-item-container" style="overflow: hidden; display: flex; justify-content: center; align-items: center; width: 180px; /* Adjust width to fit one button */ position: relative; min-height: 50px; /* Ensure space for the button */ margin-left: 10px; margin-right: 10px;">
+					{#key currentGameModeIndex}
+						<div class="game-mode-item-wrapper"
+							in:fly="{{ x: slideInX, duration: 300 }}"
+							out:fly="{{ x: slideOutX, duration: 300 }}"
+							style="display: flex; justify-content: center; width: 100%;">
+							<Button
+								text={gameModeOptions[currentGameModeIndex].text}
+								color={gameModeOptions[currentGameModeIndex].color}
+								onClick={selectDisplayedGameMode}
+								animation=""
+								additionalClasses="game-mode-main-button"
+							/>
+						</div>
+					{/key}
+				</div>
+				<Button text=">" color="blue" onClick={showNextMode} additionalClasses="swipe-arrow next-arrow" animation="" />
+			</div>
+			<div class="lobby-actions-column" style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 0px;">
+				<Button text="Scoreboard" color="orange" href="/scoreboard" animation="" additionalClasses="lobby-action-button" />
+				<Button text="Rules" color="blue" onClick={toggleRulesModal} animation="" additionalClasses="lobby-action-button" />
+			</div>
 		</div>
 	{/if}
 
