@@ -173,8 +173,8 @@
 	{/if}
 
 	<div class="pagination-controls bounceInDown">
-		<Button text="Previous" color="blue" onClick={prevPage} disabled={currentPage <= 1 || loading} />
+		<Button text="<" color="medium-blue" onClick={prevPage} disabled={currentPage <= 1 || loading} />
 		<span>Page {currentPage} of {totalPages}</span>
-		<Button text="Next" color="blue" onClick={nextPage} disabled={currentPage >= totalPages || loading} />
+		<Button text=">" color="medium-blue" onClick={nextPage} disabled={currentPage >= totalPages || loading} />
 	</div>
 </div>

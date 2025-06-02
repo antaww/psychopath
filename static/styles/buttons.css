@@ -118,6 +118,37 @@
     text-shadow: 2px 2px 1px #b8a928, -2px 2px 1px #b8a928, 2px -2px 1px #b8a928, -2px -2px 1px #b8a928, 0px 2px 1px #b8a928, 0px -2px 1px #b8a928, 0px 4px 1px #7c5e16, 2px 4px 1px #7c5e16, -2px 4px 1px #7c5e16;
 }
 
+.game-button.yellow:hover {
+    top: 2px;
+    box-shadow: 0 4px 0 #b8a928, 0 6px 1px 1px rgba(0, 0, 0, .3), 0 8px 0 5px #9e8a20, 0 10px 0 5px #a69a2e, 0 13px 0 5px #7c5e16, 0 13px 1px 6px rgba(0, 0, 0, .3);
+}
+
+.game-button.flashy-pink {
+    background: repeating-linear-gradient(45deg, #FF1493, #FF1493 5px, #FF007F 5px, #FF007F 10px);
+    border-bottom: 3px solid rgba(200, 0, 100, 0.5);
+    box-shadow: 0 6px 0 #C7006F, 0 8px 1px 1px rgba(0, 0, 0, .3), 0 10px 0 5px #A3005B, 0 12px 0 5px #B80065, 0 15px 0 5px #8F004E, 0 15px 1px 6px rgba(0, 0, 0, .3);
+    color: #fff !important;
+    text-shadow: 2px 2px 1px #C7006F, -2px 2px 1px #C7006F, 2px -2px 1px #C7006F, -2px -2px 1px #C7006F, 0px 2px 1px #C7006F, 0px -2px 1px #C7006F, 0px 4px 1px #8F004E, 2px 4px 1px #8F004E, -2px 4px 1px #8F004E;
+}
+
+.game-button.flashy-pink:hover {
+    top: 2px;
+    box-shadow: 0 4px 0 #C7006F, 0 6px 1px 1px rgba(0, 0, 0, .3), 0 8px 0 5px #A3005B, 0 10px 0 5px #B80065, 0 13px 0 5px #8F004E, 0 13px 1px 6px rgba(0, 0, 0, .3);
+}
+
+.game-button.medium-blue {
+    background: repeating-linear-gradient(45deg, #2a9fd8, #2a9fd8 5px, #2e8bc8 5px, #2e8bc8 10px);
+    border-bottom: 3px solid rgba(10, 70, 120, 0.5);
+    box-shadow: 0 6px 0 #1f5a7a, 0 8px 1px 1px rgba(0, 0, 0, .3), 0 10px 0 5px #0e4266, 0 12px 0 5px #134b6f, 0 15px 0 5px #09334f, 0 15px 1px 6px rgba(0, 0, 0, .3);
+    color: #fff !important;
+    text-shadow: 2px 2px 1px #00558a, -2px 2px 1px #00558a, 2px -2px 1px #00558a, -2px -2px 1px #00558a, 0px 2px 1px #00558a, 0px -2px 1px #00558a, 0px 4px 1px #003b70, 2px 4px 1px #003b70, -2px 4px 1px #003b70;
+}
+
+.game-button.medium-blue:hover {
+    top: 2px;
+    box-shadow: 0 4px 0 #1f5a7a, 0 6px 1px 1px rgba(0, 0, 0, .3), 0 8px 0 5px #0e4266, 0 10px 0 5px #134b6f, 0 13px 0 5px #09334f, 0 13px 1px 6px rgba(0, 0, 0, .3);
+}
+
 .inGameButtons {
     display: flex;
     flex-flow: column;

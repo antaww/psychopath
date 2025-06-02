@@ -486,7 +486,7 @@
 
 .pagination-controls span {
     font-size: 1.2em;
-    text-shadow: 1px 1px 0px #004a87;
+    text-shadow: 3px 3px 0px #0066a2, -3px 3px 0px #0066a2, 3px -3px 0px #0066a2, -3px -3px 0px #0066a2, 0px 3px 0px #0066a2, 0px -3px 0px #0066a2, 0px 6px 0px #004a87, 3px 6px 0px #004a87, -3px 6px 0px #004a87;
 }
 
 .loading-text {

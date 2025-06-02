@@ -1,6 +1,6 @@
 <script lang="ts">
 	export let text: string = 'Button';
-	export let color: 'blue' | 'green' | 'orange' | 'red' | 'purple' | 'yellow' | 'neutral' | 'lightorange' = 'neutral';
+	export let color: 'blue' | 'green' | 'orange' | 'red' | 'purple' | 'yellow' | 'neutral' | 'lightorange' | 'flashy-pink' | 'medium-blue' = 'neutral';
 	export let onClick: (() => void) | null = null;
 	export let href: string | null = null;
 	export let disabled: boolean = false;

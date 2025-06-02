@@ -884,7 +884,7 @@
 	{#if !isPlaying && gameMode === ''}
 		<div class="game-mode-selection-area" style="display: flex; flex-direction: column; align-items: center;">
 			<div class="game-mode-row" style="display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
-				<Button text="<" color="blue" onClick={showPreviousMode} additionalClasses="swipe-arrow prev-arrow" animation="" />
+				<Button text="<" color="medium-blue" onClick={showPreviousMode} additionalClasses="swipe-arrow prev-arrow" animation="" />
 				<div class="game-mode-swiper-item-container" style="display: flex; justify-content: center; align-items: center; width: 180px; /* Adjust width to fit one button */ position: relative; min-height: 50px; /* Ensure space for the button */ margin-left: 10px; margin-right: 10px;">
 					{#key currentGameModeIndex}
 						<div class="game-mode-item-wrapper"
@@ -901,7 +901,7 @@
 						</div>
 					{/key}
 				</div>
-				<Button text=">" color="blue" onClick={showNextMode} additionalClasses="swipe-arrow next-arrow" animation="" />
+				<Button text=">" color="medium-blue" onClick={showNextMode} additionalClasses="swipe-arrow next-arrow" animation="" />
 			</div>
 			<div class="lobby-actions-column" style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 0px;">
 				<Button text="Scoreboard" color="orange" href="/scoreboard" animation="" additionalClasses="lobby-action-button" />
