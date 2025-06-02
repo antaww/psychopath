@@ -712,26 +712,34 @@
 
 	function handleResetClick() {
 		if (!isPlaying) return;
-		console.log("Reset Clicked");
 		
 		userClickedCells = [];
 		levelFinished = false;
 		isClicking = false;
 
 		if (gameMode === "speedrun") {
+			console.log("Reset Clicked for Speedrun");
 			stopTimer();
 			startTimer();
 			// Reset current level progress, but not currentLevel number itself for speedrun
 			resetCellsVisualization();
 		} else if (gameMode === "training") {
-			// For training, reset means get a new path for the selected difficulty
-			// currentLevel will continue to increment for attempts
-			generateGameLogic();
+			console.log("Back to training difficulty selection (from Reset/Back button)");
+			isPlaying = false; // This will take the user back to the difficulty selection UI
+			// gameMode remains 'training'
+			currentLevel = 0; // Reset attempts count for the difficulty level
+
+			// Clear canvas
+			if (ctx && canvasElement) {
+				ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+			}
 		} else if (gameMode === "infinite") {
+			console.log("Reset Clicked for Infinite");
 			currentLevel = 0; // This will be incremented by generateGameLogic
 			generateGameLogic();
 		} else {
 			// Default for other modes if any
+			console.log("Reset Clicked (default case)");
 			resetCellsVisualization();
 		}
 	}
@@ -908,7 +916,12 @@
 				<Button text={formatTime(timerValue)} color="purple" animation="" disableHoverEffect={true} />
 			{/if}
 			<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" /> 
-			<Button text="Reset" color="red" onClick={handleResetClick} animation="" /> 
+			<Button 
+				text={gameMode === 'training' ? "Back" : "Reset"} 
+				color={gameMode === 'training' ? "blue" : "red"} 
+				onClick={handleResetClick} 
+				animation="" 
+			/> 
 		</div>
 	{/if}
 </div>
