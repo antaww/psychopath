@@ -871,29 +871,31 @@
 					placeholder="Enter your nickname"
 					maxlength="15"
 				/>
+				<Button text="OK" color="green" onClick={confirmSettingsAndStartGame} disabled={!isNicknameValid} animation="" />
 			</div>
 		{:else if gameMode === 'training'}
 			<div class="difficulty-selector-container">
 				<span class="difficulty-selector-title color-list-title">Choose difficulty (grid size):</span>
 				{#key selectedTrainingDifficulty}
-					<div class="difficulty-buttons">
-						{#each [5, 6, 8] as size (size)}
-							<Button
-								text={String(size)}
-								color={selectedTrainingDifficulty === size ? 'red' : 'blue'}
-								onClick={() => selectTrainingDifficulty(size)}
-								additionalClasses="difficulty-choice-button"
-								animation=""
-							/>
-						{/each}
+					<div class="difficulty-buttons-wrapper">
+						<div class="difficulty-buttons">
+							{#each [5, 6, 8] as size (size)}
+								<Button
+									text={String(size)}
+									color={selectedTrainingDifficulty === size ? 'red' : 'blue'}
+									onClick={() => selectTrainingDifficulty(size)}
+									additionalClasses="difficulty-choice-button"
+									animation=""
+								/>
+							{/each}
+						</div>
+						<Button text="OK" color="green" onClick={confirmSettingsAndStartGame} animation="" />
 					</div>
 				{/key}
 			</div>
 		{/if}
 
 		<!-- Common elements for Speedrun (after nickname) and Training (after difficulty selection) -->
-		<Button text="OK" color="green" onClick={confirmSettingsAndStartGame} disabled={gameMode === 'speedrun' && !isNicknameValid} animation="" />
-		
 		<div class="color-list">
 			<span class="color-list-title">Choose your color</span>
 			{#each availableColors as color}
@@ -996,5 +998,3 @@
 <div class="footer-credit">
 	Created by <a href="https://github.com/antaww" target="_blank" rel="noopener noreferrer">antaww</a>
 </div>
-
-

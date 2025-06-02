@@ -574,3 +574,42 @@
         /* Final centered position */
     }
 }
+
+.nickname-container {
+    display: flex;
+    align-items: center; /* Vertically align items in the middle */
+    gap: 10px; /* Space between input and button */
+    margin-bottom: 20px; /* Space below the nickname section */
+}
+
+.nickname-container input[type="text"] {
+    flex-grow: 1; /* Allow input to take available space */
+}
+
+.difficulty-selector-container {
+    display: flex;
+    flex-direction: column; /* Stack title and buttons vertically */
+    align-items: center; /* Center items horizontally */
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.difficulty-buttons-wrapper {
+    display: flex;
+    align-items: center; /* Vertically align items */
+    gap: 10px; /* Space between difficulty buttons and OK button */
+}
+
+.difficulty-buttons {
+    display: flex;
+    gap: 10px; /* Space between individual difficulty buttons */
+}
+
+.color-list {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
