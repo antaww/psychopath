@@ -9,7 +9,7 @@
 		id: number;
 		pseudo: string;
 		time_ms: number;
-		created_at: string;
+		updated_at: string;
 	}
 
 	let scoreboardEntries: ScoreEntry[] = [];
@@ -26,7 +26,7 @@
 		const offset = (pageNumber - 1) * itemsPerPage;
 		let query = supabase
 			.from('speedrun_scores')
-			.select('id, pseudo, time_ms, created_at', { count: 'exact' })
+			.select('id, pseudo, time_ms, updated_at', { count: 'exact' })
 			.order('time_ms', { ascending: true });
 
 		if (search) {
@@ -62,7 +62,7 @@
 	function updateDisplayEntries() {
 		const newEntries = [...scoreboardEntries];
 		while (newEntries.length < itemsPerPage) {
-			newEntries.push({ id: -1, pseudo: '-', time_ms: -1, created_at: '' }); // Placeholder
+			newEntries.push({ id: -1, pseudo: '-', time_ms: -1, updated_at: '' }); // Placeholder
 		}
 		displayEntries = newEntries;
 	}
@@ -164,7 +164,7 @@
 							<td>{entry.pseudo === '-' ? '-' : (currentPage - 1) * itemsPerPage + i + 1}</td>
 							<td>{entry.pseudo}</td>
 							<td>{formatTime(entry.time_ms)}</td>
-							<td>{formatDate(entry.created_at)}</td>
+							<td>{formatDate(entry.updated_at)}</td>
 						</tr>
 					{/each}
 				</tbody>
