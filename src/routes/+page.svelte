@@ -12,7 +12,7 @@
 	import Button from '$lib/components/Button.svelte'; // Import the new Button component
 
 	let nickname = '';
-	let gameMode = ''; // 'speedrun' or 'infinite'
+	let gameMode = ''; // 'speedrun', 'infinite' or 'training'
 	let isPlaying = false;
 	let currentLevel = 0;
 	let timerValue = 0; // Will be in milliseconds
@@ -50,6 +50,7 @@
 	let levelFinished = false;
 
 	let isNicknameValid = false;
+	let selectedTrainingDifficulty: number = 5; // Default difficulty for training mode (5x5 grid)
 
 	let showRulesModal = false;
 
@@ -280,6 +281,13 @@
 		console.log('Play Infinite');
 	}
 
+	function handlePlayTraining() {
+		gameMode = 'training';
+		selectedTrainingDifficulty = 5; // Reset to default when mode is selected
+		nickname = ''; // Not used in training
+		console.log('Play Training');
+	}
+
 	function sanitizeNickname(value: string): string {
 		return value.replace(/[^a-zA-Z0-9_]/g, '');
 	}
@@ -297,22 +305,35 @@
 
 	$: isNicknameValid = nickname.trim() !== '';
 
-	async function handleValidateNickname() {
-		if (!isNicknameValid) { // Safety check, button should be disabled
-			console.warn("Attempted to validate nickname when invalid.");
+	async function confirmSettingsAndStartGame() {
+		if (gameMode === 'speedrun') {
+			if (!isNicknameValid) {
+				console.warn("Attempted to start speedrun with invalid nickname.");
+				return;
+			}
+			console.log('Starting Speedrun. Nickname:', nickname);
+		} else if (gameMode === 'training') {
+			console.log('Starting Training with difficulty:', selectedTrainingDifficulty);
+			// No nickname validation needed. currentDifficulty will be set from selectedTrainingDifficulty.
+		} else {
+			console.warn("Unknown game mode for starting game:", gameMode);
 			return;
 		}
-		// nickname is already sanitized and confirmed not empty by isNicknameValid
-		console.log('Nickname:', nickname);
+
 		isPlaying = true;
-		
+		currentLevel = 0; // Reset level counter for the new game/session
+
 		await tick(); // Wait for DOM update after isPlaying becomes true
 
 		if (gameMode === 'speedrun') {
 			startTimer();
+			initGrid(5); // Initial difficulty for speedrun is 5
+		} else if (gameMode === 'training') {
+			// Timer is not used in training mode
+			initGrid(selectedTrainingDifficulty);
 		}
-		initGrid(5);
-		await generateGameLogic();
+		// Common logic after mode-specific setup
+		await generateGameLogic(); // This will increment currentLevel to 1
 	}
 
 	function handleColorSelect(selectedColorValue: string) {
@@ -372,38 +393,42 @@
 		currentLevel += 1;
 
 		if (gameMode === "speedrun") {
-			if (levelsCount > 1) { 
+			if (levelsCount > 1) {
 				if (currentLevel <= 5) {
 					currentDifficulty = 5;
 				} else if (currentLevel > 5 && currentLevel <= 10) {
 					currentDifficulty = 6;
-				} else if (currentLevel > 10 && currentLevel <= levelsCount) { 
+				} else if (currentLevel > 10 && currentLevel <= levelsCount) {
 					currentDifficulty = 8;
 				}
 			}
 
-			if (currentLevel > levelsCount) { 
+			if (currentLevel > levelsCount) {
 				console.log("Speedrun finished! Score:", timerValue, "Pseudo:", nickname);
-				stopTimer(); 
+				stopTimer();
 				finalTimeMs = timerValue; // Store final time
 				isPlaying = false; // Stop game interactions
 				showGameOverScreen = true; // Show the game over UI immediately
 
 				// Perform score saving, ranking, and confetti in the background
-				// This function itself is async, but we don't await its completion here
-				// so generateGameLogic can return and UI updates.
 				handleScoreSavingAndConfetti(nickname, finalTimeMs);
-
-				// DO NOT call handleLobbyClick() here anymore
 				return;
 			}
+		} else if (gameMode === "training") {
+			// currentDifficulty is already set by initGrid(selectedTrainingDifficulty)
+			// when the game started via confirmSettingsAndStartGame.
+			// No need to change it here.
+			// finalTimeMs and timer are not relevant.
+			// isPlaying is already true.
+			// currentLevel has been incremented.
+			console.log(`Training mode: Starting attempt ${currentLevel} with difficulty ${currentDifficulty}`);
 		} else if (gameMode === "infinite") {
 			currentDifficulty = Math.floor(Math.random() * (10 - 3 + 1)) + 3;
 			finalTimeMs = 0;
 
 			// Reset game state for a new speedrun with the same nickname
 			isPlaying = true;
-			currentLevel = 0; // This will be incremented by generateGameLogic
+			// currentLevel = 0; // This will be incremented by generateGameLogic - already handled
 			timerValue = 0;
 		}
 
@@ -648,7 +673,7 @@
 		console.log("Attempt Failed!");
 
 		if (gameMode === "infinite") {
-			console.log("Infinite mode: Total level completed:", currentLevel > 0 ? currentLevel -1 : 0); 
+			console.log("Infinite mode: Total level completed:", currentLevel > 0 ? currentLevel -1 : 0);
 			// await saveInfiniteScore(nickname, currentLevel > 0 ? currentLevel -1 : 0); // A faire plus tard
 			// For infinite, a fail means game over, go to lobby
 			handleLobbyClick();
@@ -661,17 +686,26 @@
 			startTimer(); // Restart timer
 			currentLevel = 0; // Reset to level 0, generateGameLogic will increment to 1
 			
-			userClickedCells = []; 
-			levelFinished = false; 
-			isClicking = false; 
+			userClickedCells = [];
+			levelFinished = false;
+			isClicking = false;
 
 			generateGameLogic(); // Regenerate level (will be level 1)
 			return; // Stop further execution for speedrun fail case
+		} else if (gameMode === "training") {
+			console.log(`Training mode: Failed attempt at difficulty ${currentDifficulty}, attempt ${currentLevel}`);
+			currentLevel = 0; // Reset attempt counter, generateGameLogic will increment to 1
+			userClickedCells = [];
+			levelFinished = false;
+			isClicking = false;
+			// Regenerate the level (same difficulty, new path)
+			generateGameLogic(); // This will use the existing currentDifficulty (selectedTrainingDifficulty)
+			return;
 		}
 		
-		userClickedCells = []; 
-		levelFinished = false; 
-		isClicking = false; 
+		userClickedCells = [];
+		levelFinished = false;
+		isClicking = false;
 
 		resetCellsVisualization(); 
 	}
@@ -680,20 +714,25 @@
 		if (!isPlaying) return;
 		console.log("Reset Clicked");
 		
+		userClickedCells = [];
+		levelFinished = false;
+		isClicking = false;
+
 		if (gameMode === "speedrun") {
 			stopTimer();
 			startTimer();
-		}
-		userClickedCells = [];
-		levelFinished = false;
-		isClicking = false; 
-		// Reset current level progress, but not currentLevel number itself for speedrun
-		// For infinite, reset would mean starting from level 1 again.
-		if (gameMode === "infinite") {
+			// Reset current level progress, but not currentLevel number itself for speedrun
+			resetCellsVisualization();
+		} else if (gameMode === "training") {
+			// For training, reset means get a new path for the selected difficulty
+			// currentLevel will continue to increment for attempts
+			generateGameLogic();
+		} else if (gameMode === "infinite") {
 			currentLevel = 0; // This will be incremented by generateGameLogic
 			generateGameLogic();
 		} else {
-			resetCellsVisualization(); 
+			// Default for other modes if any
+			resetCellsVisualization();
 		}
 	}
 
@@ -729,6 +768,11 @@
 	function handleLobbyFromGameOver() {
 		showGameOverScreen = false; // Hide game over screen
 		handleLobbyClick(); // Use existing lobby logic to reset fully
+	}
+
+	// Function to explicitly handle difficulty selection for training mode
+	function selectTrainingDifficulty(size: number) {
+		selectedTrainingDifficulty = size;
 	}
 
 	onMount(async () => {
@@ -801,6 +845,7 @@
 	{#if !isPlaying && gameMode === ''}
 		<div class="buttons-container">
 			<Button text="Speedrun" color="green" onClick={handlePlaySpeedrun} />
+			<Button text="Training" color="blue" onClick={handlePlayTraining} />
 			<!-- <Button text="Infinite" color="green" onClick={handlePlayInfinite} /> -->
 			<Button text="Rules" color="blue" onClick={toggleRulesModal} />
 			<Button text="Scoreboard" color="orange" href="/scoreboard" />
@@ -808,17 +853,38 @@
 	{/if}
 
 	{#if !isPlaying && gameMode !== ''}
-		<div class="nickname-container"> 
-			<input 
-				type="text" 
-				class="difficulty-button game-button purple"
-				value={nickname} 
-				on:input={handleNicknameInput}
-				placeholder="Enter your nickname" 
-				maxlength="15"
-			>
-			<Button text="OK" color="green" onClick={handleValidateNickname} disabled={!isNicknameValid} animation="" />
-		</div>
+		{#if gameMode === 'speedrun'}
+			<div class="nickname-container">
+				<input
+					type="text"
+					class="difficulty-button game-button purple"
+					value={nickname}
+					on:input={handleNicknameInput}
+					placeholder="Enter your nickname"
+					maxlength="15"
+				/>
+			</div>
+		{:else if gameMode === 'training'}
+			<div class="difficulty-selector-container">
+				<span class="difficulty-selector-title color-list-title">Choose difficulty (grid size):</span>
+				{#key selectedTrainingDifficulty}
+					<div class="difficulty-buttons">
+						{#each [5, 6, 8] as size (size)}
+							<Button
+								text={String(size)}
+								color={selectedTrainingDifficulty === size ? 'red' : 'blue'}
+								onClick={() => selectTrainingDifficulty(size)}
+								additionalClasses="difficulty-choice-button"
+								animation=""
+							/>
+						{/each}
+					</div>
+				{/key}
+			</div>
+		{/if}
+
+		<!-- Common elements for Speedrun (after nickname) and Training (after difficulty selection) -->
+		<Button text="OK" color="green" onClick={confirmSettingsAndStartGame} disabled={gameMode === 'speedrun' && !isNicknameValid} animation="" />
 		
 		<div class="color-list">
 			<span class="color-list-title">Choose your color</span>
@@ -838,7 +904,9 @@
 	{#if isPlaying}
 		<div class="inGameButtons">
 			<!-- <div class="timer game-button purple">{formatTime(timerValue)}</div> -->
-			<Button text={formatTime(timerValue)} color="purple" animation="" disableHoverEffect={true} />
+			{#if gameMode === 'speedrun'}
+				<Button text={formatTime(timerValue)} color="purple" animation="" disableHoverEffect={true} />
+			{/if}
 			<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" /> 
 			<Button text="Reset" color="red" onClick={handleResetClick} animation="" /> 
 		</div>
@@ -875,6 +943,7 @@
 			The goal of the game is to <span class="rules-text-orange-outline">reproduce the highlighted path</span> on the grid.<br />
 			<u>Click and drag</u> your mouse to draw your path.<br />
 			- <strong><span class="rules-text-green-outline">Speedrun</span> :</strong> Complete 15 levels as fast as possible. Your time will be recorded on the scoreboard.<br />
+			- <strong><span class="rules-text-blue-outline">Training</span> :</strong> Choose your grid size and practice as much as you want. Mistakes reset the current path.<br />
 			- <strong><span class="rules-text-purple-outline">Infinite</span> :</strong> Play as many levels as you can. The difficulty increases randomly. <span class="rules-text-red-outline">(Coming soon!)</span><br /><br />
 			Be careful, any mistake will make you <span class="rules-text-lightred-outline">restart the game</span> (in Speedrun) or <span class="rules-text-red-outline">end the game</span> (in Infinite).
 		</p>
