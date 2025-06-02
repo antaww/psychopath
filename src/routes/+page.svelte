@@ -853,7 +853,7 @@
 	{#if !isPlaying && gameMode === ''}
 		<div class="buttons-container">
 			<Button text="Speedrun" color="green" onClick={handlePlaySpeedrun} />
-			<Button text="Training" color="blue" onClick={handlePlayTraining} />
+			<Button text="Training" color="lightorange" onClick={handlePlayTraining} />
 			<!-- <Button text="Infinite" color="green" onClick={handlePlayInfinite} /> -->
 			<Button text="Rules" color="blue" onClick={toggleRulesModal} />
 			<Button text="Scoreboard" color="orange" href="/scoreboard" />
