@@ -1088,17 +1088,18 @@
 
 	{#if isPlaying}
 		<div class="inGameButtons">
-			<!-- <div class="timer game-button purple">{formatTime(timerValue)}</div> -->
 			{#if gameMode === 'speedrun'}
 				<Button text={formatTime(timerValue)} color="purple" animation="" disableHoverEffect={true} />
 			{/if}
 			<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" /> 
-			<Button 
-				text={gameMode === 'training' ? "Back" : "Reset"} 
-				color={gameMode === 'training' ? "blue" : "red"} 
-				onClick={handleResetClick} 
-				animation="" 
-			/> 
+			{#if gameMode === 'training'}
+				<Button 
+					text="Back" 
+					color="blue" 
+					onClick={handleResetClick} 
+					animation="" 
+				/> 
+			{/if}
 		</div>
 	{/if}
 </div>
