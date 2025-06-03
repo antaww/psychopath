@@ -522,52 +522,166 @@
 	}
 
 	function randomPath() {
-		if (!ctx || !canvasElement) return;
-		drawnCells = [];
-		let pathCount = Math.max(3, Math.floor(currentDifficulty * currentDifficulty / 3)); 
+		if (!ctx || !canvasElement) {
+			console.error("Canvas context or element not available for randomPath.");
+			drawnCells = [];
+			return;
+		}
 
-		let startCell = getRandomCell();
-		colorCell(startCell[0], startCell[1], cellPathColor);
-		drawnCells.push(startCell);
+		const desiredPathCount = Math.max(3, Math.floor(currentDifficulty * currentDifficulty / 3));
+		
+		fillCanvas("#fff"); // Clear canvas once at the beginning
+		drawGrid("#000", currentDifficulty, currentDifficulty, 1);
 
-		let n = 0;
-		const maxAttempts = pathCount * 4; // Increased attempts
+		let finalPath: [number, number][] = [];
 
-		while (drawnCells.length < pathCount) {
-			n++;
-			if (n > maxAttempts) { 
-				console.warn("randomPath: Max attempts reached, trying to reset path generation.");
-				drawnCells = []; 
-				fillCanvas("#fff"); 
-				drawGrid("#000", currentDifficulty, currentDifficulty, 1); 
-				startCell = getRandomCell();
-				colorCell(startCell[0], startCell[1], cellPathColor);
-				drawnCells.push(startCell);
-				n = 0; 
-				if (n > maxAttempts) { // Second attempt failed
-					console.error("Could not generate a valid path after retry.");
-					return;
+		// More attempts for robustness, especially on dense grids or long paths
+		for (let attempt = 0; attempt < 50; attempt++) { 
+			const pathStack: [number, number][] = [];
+			const visitedInAttempt: boolean[][] = Array(currentDifficulty)
+				.fill(null)
+				.map(() => Array(currentDifficulty).fill(false));
+
+			if (currentDifficulty <= 0) {
+				finalPath = [];
+				break;
+			}
+
+			let startCell = getRandomCell();
+			pathStack.push(startCell);
+			visitedInAttempt[startCell[0]][startCell[1]] = true;
+
+			let iterationsInAttempt = 0;
+			// Max iterations: squared grid size, as path can't be longer than total cells
+			const maxIterationsFactor = currentDifficulty * currentDifficulty * 2; 
+
+			// Renamed and refined helper function
+			function wouldCellXBecome4WayJunctionIfYConnects(
+				cellX: [number, number],       // The cell we are checking (e.g., currentCell or potentialNextCell)
+				cellYConnecting: [number, number], // The cell that would connect to cellX
+				visitedInAttemptLocal: boolean[][]
+			): boolean {
+				const allGridNeighborsOfX = checkNeighbors(cellX[0], cellX[1]);
+				let existingPathConnectionsToX = 0;
+
+				for (const gridNeighbor of allGridNeighborsOfX) {
+					// If this grid neighbor is the cell that's trying to connect, we don't count it as an *existing* connection yet for this check.
+					// We only care about other cells already in the path.
+					if (gridNeighbor[0] === cellYConnecting[0] && gridNeighbor[1] === cellYConnecting[1]) {
+						continue;
+					}
+					if (visitedInAttemptLocal[gridNeighbor[0]][gridNeighbor[1]]) {
+						existingPathConnectionsToX++;
+					}
+				}
+				// If cellX already has 3 *other* path connections, adding cellYConnecting makes it 4.
+				return existingPathConnectionsToX >= 3;
+			}
+
+			// Helper function for weighted random selection (remains the same)
+			function selectNextCellUsingWeightedLogic(
+				selectionPool: [number, number][],
+				currentDifficultyLocal: number,
+				localEdgePenaltyFactor: number
+			): [number, number] | null { // Can return null if selectionPool is empty
+				if (selectionPool.length === 0) return null;
+
+				const weightedNeighborsLocal: { cell: [number, number], weight: number }[] = [];
+				let totalWeightLocal = 0;
+
+				for (const neighbor of selectionPool) {
+					const isEdgeCell =
+						neighbor[0] === 0 ||
+						neighbor[0] === currentDifficultyLocal - 1 ||
+						neighbor[1] === 0 ||
+						neighbor[1] === currentDifficultyLocal - 1;
+					const weight = isEdgeCell ? 1 : localEdgePenaltyFactor;
+					weightedNeighborsLocal.push({ cell: neighbor, weight: weight });
+					totalWeightLocal += weight;
+				}
+
+				if (totalWeightLocal > 0) {
+					let randomChoice = Math.random() * totalWeightLocal;
+					for (const weightedItem of weightedNeighborsLocal) {
+						randomChoice -= weightedItem.weight;
+						if (randomChoice < 0) {
+							return weightedItem.cell;
+						}
+					}
+				}
+				// Fallback if weights sum to 0 or other issue (should be rare with positive weights)
+				return selectionPool[Math.floor(Math.random() * selectionPool.length)];
+			}
+
+			while (pathStack.length > 0 && pathStack.length < desiredPathCount && iterationsInAttempt < maxIterationsFactor) {
+				iterationsInAttempt++;
+				let currentCell = pathStack[pathStack.length - 1];
+				const neighbors = checkNeighbors(currentCell[0], currentCell[1]);
+				const unvisitedNeighbors = neighbors.filter(
+					(n) => !visitedInAttempt[n[0]][n[1]]
+				);
+
+				if (unvisitedNeighbors.length > 0) {
+					const preferredChoices: [number, number][] = [];
+					for (const potentialNext of unvisitedNeighbors) {
+						const currentCellBecomesJunction = wouldCellXBecome4WayJunctionIfYConnects(currentCell, potentialNext, visitedInAttempt);
+						const potentialNextBecomesJunction = wouldCellXBecome4WayJunctionIfYConnects(potentialNext, currentCell, visitedInAttempt);
+
+						if (!currentCellBecomesJunction && !potentialNextBecomesJunction) {
+							preferredChoices.push(potentialNext);
+						}
+					}
+
+					let determinedNextCell: [number, number] | null = null; 
+
+					if (preferredChoices.length > 0) {
+						const edgePenaltyFactor = 3; 
+						determinedNextCell = selectNextCellUsingWeightedLogic(preferredChoices, currentDifficulty, edgePenaltyFactor);
+					} else if (unvisitedNeighbors.length > 0) {
+						// "Sauf s'il n'y a pas le choix" - preferredChoices is empty, but other moves exist (all are "bad")
+						// Proceed by picking from all unvisitedNeighbors, accepting a 4-way junction formation.
+						const edgePenaltyFactor = 3; 
+						determinedNextCell = selectNextCellUsingWeightedLogic(unvisitedNeighbors, currentDifficulty, edgePenaltyFactor);
+					}
+
+					if (determinedNextCell) {
+						pathStack.push(determinedNextCell);
+						visitedInAttempt[determinedNextCell[0]][determinedNextCell[1]] = true;
+					} else {
+						// Backtrack if no preferred choice (all moves create a 4-way junction at one end or the other)
+						// OR if selectNextCellUsingWeightedLogic returned null unexpectedly.
+						pathStack.pop(); 
+					}
+				} else {
+					// No unvisited neighbors from current cell, standard backtrack
+					pathStack.pop(); 
 				}
 			}
 
-			let currentC = drawnCells[drawnCells.length - 1];
-			let neighbors = checkNeighbors(currentC[0], currentC[1]);
-			
-			let availableNeighbors = neighbors.filter(n => !drawnCells.some(dc => dc[0] === n[0] && dc[1] === n[1]));
-
-			if (availableNeighbors.length === 0) { 
-				// Backtrack or reset logic more robustly
-				// For now, if stuck, try to restart the path generation from scratch once
-				// This will be caught by the maxAttempts in the next iteration if it keeps failing.
-				console.warn("Path generation stuck, trying to pick a new starting for segment or full reset via maxAttempts");
-				// Simple strategy: remove last cell and try to find other neighbors from previous one
-				// This can be complex, for now, we rely on the n > maxAttempts for a full reset.
-				continue; // Try to find a new path from the current set of drawnCells or trigger reset by attempts
+			if (pathStack.length >= desiredPathCount) {
+				finalPath = [...pathStack]; // Found a suitable path
+				// console.log(`Path generated on attempt ${attempt + 1}, length: ${finalPath.length}`);
+				break; // Exit attempts loop
+			} else if (pathStack.length > finalPath.length) {
+				// If this attempt didn't reach desired length, but is longer than previous best, keep it
+				finalPath = [...pathStack];
 			}
+		}
 
-			let neighbor = availableNeighbors[Math.floor(Math.random() * availableNeighbors.length)];
-			drawnCells.push(neighbor);
-			colorCell(neighbor[0], neighbor[1], cellPathColor);
+		if (finalPath.length === 0 && currentDifficulty > 0) {
+			console.warn("Failed to generate any path after all attempts. Using a single random cell as fallback.");
+			finalPath = [getRandomCell()];
+		} else if (finalPath.length < desiredPathCount && finalPath.length > 0) {
+			console.warn(`Generated path length ${finalPath.length} is less than desired ${desiredPathCount}. Using this shorter path.`);
+		} else if (finalPath.length === 0 && currentDifficulty === 0) {
+			 console.warn("Cannot generate path with zero difficulty.");
+		}
+
+		drawnCells = finalPath; // Update global drawnCells
+
+		// Color the cells of the final path
+		for (const cell of drawnCells) {
+			colorCell(cell[0], cell[1], cellPathColor);
 		}
 	}
 
