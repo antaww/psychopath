@@ -872,15 +872,19 @@
 		isClicking = false;
 
 		if (gameMode === "speedrun") {
-			console.log("Reset Clicked for Speedrun");
+			console.log("Back to nickname selection (from Back button in Speedrun)");
 			stopTimer();
-			startTimer();
-			// Reset current level progress, but not currentLevel number itself for speedrun
-			resetCellsVisualization();
+			isPlaying = false; // This will take the user back to the nickname input UI
+			currentLevel = 0; // Reset level progress
+			timerValue = 0; // Reset timer display
+
+			// Clear canvas
+			if (ctx && canvasElement) {
+				ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+			}
 		} else if (gameMode === "training") {
 			console.log("Back to training difficulty selection (from Reset/Back button)");
 			isPlaying = false; // This will take the user back to the difficulty selection UI
-			// gameMode remains 'training'
 			currentLevel = 0; // Reset attempts count for the difficulty level
 
 			// Clear canvas
@@ -1090,6 +1094,12 @@
 		<div class="inGameButtons">
 			{#if gameMode === 'speedrun'}
 				<Button text={formatTime(timerValue)} color="purple" animation="" disableHoverEffect={true} />
+				<Button
+					text="Back"
+					color="blue"
+					onClick={handleResetClick}
+					animation=""
+				/>
 			{/if}
 			<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" /> 
 			{#if gameMode === 'training'}
