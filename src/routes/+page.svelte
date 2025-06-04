@@ -6,6 +6,7 @@
 
 <script lang="ts">
 	import '$lib/logger';
+	import { browser } from '$app/environment';
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { fly } from 'svelte/transition'; // ADDED: For swipe animation
 	import { supabase } from '$lib/supabaseClient'; // Importer le client Supabase
@@ -1016,50 +1017,54 @@
 	}
 
 	onMount(async () => {
-		loadKeybindFromStorage(); // Load saved keybind
-		await fetchScoreboard(); // Fetch initial scoreboard data
+		if (browser) {
+			loadKeybindFromStorage(); // Load saved keybind
+			await fetchScoreboard(); // Fetch initial scoreboard data
 
-		speedrunScoresChannel = supabase
-			.channel('speedrun_scores_changes')
-			.on(
-				'postgres_changes',
-				{ event: '*', schema: 'public', table: 'speedrun_scores' },
-				(payload) => {
-					console.log('Change received!', payload);
-					fetchScoreboard(); // Re-fetch scoreboard on any change
-				}
-			)
-			.subscribe((status, err) => {
-				if (status === 'SUBSCRIBED') {
-					console.log('Subscribed to speedrun_scores changes!');
-				} else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-					console.error('Subscription error or timed out:', err, 'Status:', status);
-				}
-			});
+			speedrunScoresChannel = supabase
+				.channel('speedrun_scores_changes')
+				.on(
+					'postgres_changes',
+					{ event: '*', schema: 'public', table: 'speedrun_scores' },
+					(payload) => {
+						console.log('Change received!', payload);
+						fetchScoreboard(); // Re-fetch scoreboard on any change
+					}
+				)
+				.subscribe((status, err) => {
+					if (status === 'SUBSCRIBED') {
+						console.log('Subscribed to speedrun_scores changes!');
+					} else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+						console.error('Subscription error or timed out:', err, 'Status:', status);
+					}
+				});
 
-		// Start polling for scoreboard updates
-		scoreboardPollInterval = window.setInterval(async () => {
-			await fetchScoreboard();
-		}, 5000); // 5000 milliseconds = 5 seconds
+			// Start polling for scoreboard updates
+			scoreboardPollInterval = window.setInterval(async () => {
+				await fetchScoreboard();
+			}, 5000); // 5000 milliseconds = 5 seconds
 
-		window.addEventListener('keydown', handleGlobalKeyDown);
-		window.addEventListener('keyup', handleGlobalKeyUp);
+			window.addEventListener('keydown', handleGlobalKeyDown);
+			window.addEventListener('keyup', handleGlobalKeyUp);
+		}
 	});
 
 	onDestroy(() => {
-		stopTimer(); 
-		if (speedrunScoresChannel) {
-			supabase.removeChannel(speedrunScoresChannel)
-				.then(() => console.log("Unsubscribed from speedrun_scores_changes"))
-				.catch(err => console.error("Error unsubscribing:", err));
-		}
-		// Clear the polling interval
-		if (scoreboardPollInterval !== undefined) {
-			window.clearInterval(scoreboardPollInterval);
-		}
+		if (browser) {
+			stopTimer();
+			if (speedrunScoresChannel) {
+				supabase.removeChannel(speedrunScoresChannel)
+					.then(() => console.log("Unsubscribed from speedrun_scores_changes"))
+					.catch(err => console.error("Error unsubscribing:", err));
+			}
+			// Clear the polling interval
+			if (scoreboardPollInterval !== undefined) {
+				window.clearInterval(scoreboardPollInterval);
+			}
 
-		window.removeEventListener('keydown', handleGlobalKeyDown);
-		window.removeEventListener('keyup', handleGlobalKeyUp);
+			window.removeEventListener('keydown', handleGlobalKeyDown);
+			window.removeEventListener('keyup', handleGlobalKeyUp);
+		}
 	});
 </script>
 
