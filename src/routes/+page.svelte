@@ -1171,23 +1171,21 @@
 				{/each}
 			</div>
 
-			{#if gameMode === 'speedrun'}
-				<div class="keybind-container" style="flex-basis: 45%; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-					<span class="keybind-title color-list-title" style="margin-bottom: 0.5rem; text-align: center;">
-						Alternative Draw Key <br/> (Left-click always works)
-					</span>
-					<Button
-						text={isChangingKeybind ? 'Press a key...' : `Draw Key: ${currentKeybind}`}
-						color="medium-blue"
-						onClick={startChangeKeybindProcess}
-						additionalClasses="keybind-button"
-						animation=""
-					/>
-					{#if isChangingKeybind}
-						<small class="color-list-title" style="color: #ccc; font-size: 0.8rem; text-align: center; display: inline-block; margin-top: 0.25rem;">Press any key to set it as your draw key.</small>
-					{/if}
-				</div>
-			{/if}
+			<div class="keybind-container" style="flex-basis: 45%; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+				<span class="keybind-title color-list-title" style="margin-bottom: 0.5rem; text-align: center;">
+					Alternative Draw Key <br/> (Left-click always works)
+				</span>
+				<Button
+					text={isChangingKeybind ? 'Press a key...' : `Draw Key: ${currentKeybind}`}
+					color="medium-blue"
+					onClick={startChangeKeybindProcess}
+					additionalClasses="keybind-button"
+					animation=""
+				/>
+				{#if isChangingKeybind}
+					<small class="color-list-title" style="color: #ccc; font-size: 0.8rem; text-align: center; display: inline-block; margin-top: 0.25rem;">Press any key to set it as your draw key.</small>
+				{/if}
+			</div>
 		</div>
 		<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" />
 	{/if}
