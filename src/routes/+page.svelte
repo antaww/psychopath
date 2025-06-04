@@ -55,6 +55,80 @@
 
 	let showRulesModal = false;
 
+	// Keybind Feature State & Logic - START
+	let currentKeybind = 'Space'; // User-friendly name (e.g., 'Space', 'Enter', 'a')
+	let isChangingKeybind = false;
+	const KEYBIND_STORAGE_KEY = 'psychopath-keybind';
+
+	function getKeyForEventComparison(bindName: string): string {
+		if (bindName === 'Space') return ' ';
+		// For most other keys like 'a', 'Shift', 'Control', event.key matches the bindName.
+		return bindName;
+	}
+
+	function loadKeybindFromStorage() {
+		const storedKeybind = localStorage.getItem(KEYBIND_STORAGE_KEY);
+		if (storedKeybind) {
+			currentKeybind = storedKeybind;
+		} else {
+			currentKeybind = 'Space'; // Default if nothing stored
+		}
+	}
+
+	function saveKeybindToStorage(keyToSave: string) {
+		localStorage.setItem(KEYBIND_STORAGE_KEY, keyToSave);
+	}
+
+	function startChangeKeybindProcess() {
+		isChangingKeybind = true;
+		// Button text will update reactively
+	}
+
+	function handleGlobalKeyDown(event: KeyboardEvent) {
+		if (isChangingKeybind) {
+			let newKeyRepresentation = event.key;
+			if (event.key === ' ') {
+				newKeyRepresentation = 'Space';
+			}
+			// Potentially add more mappings here if needed (e.g. 'Control' -> 'Ctrl')
+			// For now, event.key or 'Space' for spacebar.
+			currentKeybind = newKeyRepresentation;
+			saveKeybindToStorage(currentKeybind);
+			isChangingKeybind = false;
+			event.preventDefault();
+			event.stopPropagation(); // Important to prevent further processing
+			tick(); // Ensure UI updates if not already covered by reactivity
+			return; // Keybind was changed, do nothing else for this event
+		}
+
+		const keyToCompare = getKeyForEventComparison(currentKeybind);
+		if (event.key === keyToCompare && isPlaying && !isClicking) {
+			const activeEl = document.activeElement;
+			if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.getAttribute('contenteditable') === 'true')) {
+				return; // Don't interfere with text input fields
+			}
+			if (showRulesModal || showGameOverScreen) {
+				return; // Don't activate drawing if modals are open
+			}
+
+			isClicking = true;
+			// Drawing will occur in handleCanvasMouseMove when the mouse moves,
+			// as it checks the isClicking flag.
+			event.preventDefault(); // Prevent default browser action (e.g., space scrolling)
+		}
+	}
+
+	function handleGlobalKeyUp(event: KeyboardEvent) {
+		const keyToCompare = getKeyForEventComparison(currentKeybind);
+		if (event.key === keyToCompare && isPlaying && isClicking) {
+			// If isClicking is true, a drawing action was initiated by this keybind (or mouse).
+			// It's safe to call handleCanvasMouseUp to finalize it.
+			handleCanvasMouseUp(); // This function sets isClicking = false and processes the path.
+			event.preventDefault();
+		}
+	}
+	// Keybind Feature State & Logic - END
+
 	// Game Mode Swiper Logic - START
 	const gameModeOptions = [
 		{ id: 'speedrun', text: 'Speedrun', color: 'green' as const, handlerFunction: handlePlaySpeedrun },
@@ -942,6 +1016,7 @@
 	}
 
 	onMount(async () => {
+		loadKeybindFromStorage(); // Load saved keybind
 		await fetchScoreboard(); // Fetch initial scoreboard data
 
 		speedrunScoresChannel = supabase
@@ -966,6 +1041,9 @@
 		scoreboardPollInterval = window.setInterval(async () => {
 			await fetchScoreboard();
 		}, 5000); // 5000 milliseconds = 5 seconds
+
+		window.addEventListener('keydown', handleGlobalKeyDown);
+		window.addEventListener('keyup', handleGlobalKeyUp);
 	});
 
 	onDestroy(() => {
@@ -979,6 +1057,9 @@
 		if (scoreboardPollInterval !== undefined) {
 			window.clearInterval(scoreboardPollInterval);
 		}
+
+		window.removeEventListener('keydown', handleGlobalKeyDown);
+		window.removeEventListener('keyup', handleGlobalKeyUp);
 	});
 </script>
 
@@ -1050,6 +1131,7 @@
 				/>
 				<Button text="OK" color="green" onClick={confirmSettingsAndStartGame} disabled={!isNicknameValid} animation="" />
 			</div>
+			<!-- Keybind Setting Button is moved below, next to color picker -->
 		{:else if gameMode === 'training'}
 			<div class="difficulty-selector-container">
 				<span class="difficulty-selector-title color-list-title">Choose difficulty (grid size):</span>
@@ -1073,21 +1155,41 @@
 		{/if}
 
 		<!-- Common elements for Speedrun (after nickname) and Training (after difficulty selection) -->
-		<div class="color-list">
-			<span class="color-list-title">Choose your color</span>
-			{#each availableColors as color}
-				<button
-					type="button"
-					class="swatch {userCellsColor === color.value ? 'selected' : 'unselected'}"
-					data-color={color.value}
-					style="background: {color.display}; border: none; padding: 0; cursor: pointer;"
-					on:click={() => handleColorSelect(color.value)}
-					title={color.name}
-					aria-label={color.name + " color"}
-				></button>
-			{/each}
+		<div class="settings-row" style="display: flex; justify-content: space-around; align-items: flex-start; width: 100%; margin-top: 1.5rem;">
+			<div class="color-list" style="flex-basis: 50%;">
+				<span class="color-list-title">Choose your color</span>
+				{#each availableColors as color}
+					<button
+						type="button"
+						class="swatch {userCellsColor === color.value ? 'selected' : 'unselected'}"
+						data-color={color.value}
+						style="background: {color.display}; border: none; padding: 0; cursor: pointer;"
+						on:click={() => handleColorSelect(color.value)}
+						title={color.name}
+						aria-label={color.name + " color"}
+					></button>
+				{/each}
+			</div>
+
+			{#if gameMode === 'speedrun'}
+				<div class="keybind-container" style="flex-basis: 45%; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+					<span class="keybind-title color-list-title" style="margin-bottom: 0.5rem; text-align: center;">
+						Alternative Draw Key <br/> (Left-click always works)
+					</span>
+					<Button
+						text={isChangingKeybind ? 'Press a key...' : `Draw Key: ${currentKeybind}`}
+						color="medium-blue"
+						onClick={startChangeKeybindProcess}
+						additionalClasses="keybind-button"
+						animation=""
+					/>
+					{#if isChangingKeybind}
+						<small class="color-list-title" style="color: #ccc; font-size: 0.8rem; text-align: center; display: inline-block; margin-top: 0.25rem;">Press any key to set it as your draw key.</small>
+					{/if}
+				</div>
+			{/if}
 		</div>
-		<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" /> 
+		<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" />
 	{/if}
 
 	{#if isPlaying}
