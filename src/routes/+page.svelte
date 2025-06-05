@@ -56,10 +56,28 @@
 
 	let showRulesModal = false;
 
+	let lastMouseX: number = 0;
+	let lastMouseY: number = 0;
+
 	// Keybind Feature State & Logic - START
 	let currentKeybind = 'Space'; // User-friendly name (e.g., 'Space', 'Enter', 'a')
 	let isChangingKeybind = false;
 	const KEYBIND_STORAGE_KEY = 'psychopath-keybind';
+
+	interface Particle {
+		x: number;
+		y: number;
+		size: number;
+		color: string;
+		vx: number;
+		vy: number;
+		alpha: number;
+		life: number;
+		initialLife: number;
+	}
+
+	let particles: Particle[] = [];
+	let lastParticleAnimationTime: number = 0;
 
 	function getKeyForEventComparison(bindName: string): string {
 		if (bindName === 'Space') return ' ';
@@ -211,6 +229,79 @@
 		flashlightStyle = `clip-path: circle(0px at 0px 0px);`;
 	}
 	// --- End Flashlight Effect Logic ---
+
+	// --- Explosion Effect Logic ---
+	const EXPLOSION_DURATION = 300; // ms
+	const NUM_PARTICLES = 50;
+	const PARTICLE_SIZE = 5;
+	const PARTICLE_SPEED_MULTIPLIER = 4;
+
+	function triggerExplosion(centerX: number, centerY: number) {
+		particles = [];
+		for (let i = 0; i < NUM_PARTICLES; i++) {
+			const angle = Math.random() * 2 * Math.PI;
+			const speed = Math.random() * PARTICLE_SPEED_MULTIPLIER + 0.5; // Random speed between 0.5 and 2.5
+			particles.push({
+				x: centerX,
+				y: centerY,
+				size: PARTICLE_SIZE,
+				color: userCellsColor, // Use user's chosen color for particles
+				vx: Math.cos(angle) * speed,
+				vy: Math.sin(angle) * speed,
+				alpha: 1,
+				life: EXPLOSION_DURATION,
+				initialLife: EXPLOSION_DURATION,
+			});
+		}
+
+		lastParticleAnimationTime = performance.now();
+		requestAnimationFrame(animateParticles);
+	}
+
+	function animateParticles(currentTime: DOMHighResTimeStamp) {
+		if (!ctx) return;
+
+		const deltaTime = currentTime - lastParticleAnimationTime;
+		lastParticleAnimationTime = currentTime;
+
+		// Clear the canvas to redraw everything, including the grid
+		fillCanvas("#fff");
+		drawGrid("#000", currentDifficulty, currentDifficulty, 1);
+
+		// Redraw the generated path for the new level underneath the explosion
+		for (const cell of drawnCells) {
+			colorCell(cell[0], cell[1], cellPathColor);
+		}
+
+		for (let i = particles.length - 1; i >= 0; i--) {
+			const p = particles[i];
+
+			// Update particle position
+			p.x += p.vx * (deltaTime / 16.66); // Adjust velocity based on time (assuming 60fps base)
+			p.y += p.vy * (deltaTime / 16.66);
+
+			// Update particle life and alpha
+			p.life -= deltaTime;
+			p.alpha = Math.max(0, p.life / p.initialLife);
+
+			// Draw particle
+			ctx.save();
+			ctx.globalAlpha = p.alpha;
+			ctx.fillStyle = p.color;
+			ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+			ctx.restore();
+
+			// Remove dead particles
+			if (p.life <= 0) {
+				particles.splice(i, 1);
+			}
+		}
+
+		if (particles.length > 0) {
+			requestAnimationFrame(animateParticles);
+		}
+	}
+	// --- End Explosion Effect Logic ---
 
 	// --- Fonctions Supabase pour les scores ---
 	async function fetchPlayerRank(playerName: string, scoreToRankMs: number): Promise<number | null> {
@@ -804,6 +895,10 @@
 		let col = Math.floor(x / cellWidth);
 		let row = Math.floor(y / cellHeight);
 
+		// Store current mouse position
+		lastMouseX = x;
+		lastMouseY = y;
+
 		if (row < 0 || row >= currentDifficulty || col < 0 || col >= currentDifficulty) {
 			return; // Mouse is outside grid boundaries
 		}
@@ -901,12 +996,21 @@
 	function failedTryLogic() {
 		console.log("Attempt Failed!");
 
+		// Reset user interaction and path immediately
+		userClickedCells = [];
+		levelFinished = false;
+		isClicking = false;
+
+		// Trigger explosion at the last known mouse position
+		if (lastMouseX !== undefined && lastMouseY !== undefined) {
+			triggerExplosion(lastMouseX, lastMouseY);
+		}
+
 		if (gameMode === "infinite") {
 			console.log("Infinite mode: Total level completed:", currentLevel > 0 ? currentLevel -1 : 0);
-			// await saveInfiniteScore(nickname, currentLevel > 0 ? currentLevel -1 : 0); // A faire plus tard
-			// For infinite, a fail means game over, go to lobby
-			handleLobbyClick();
-			return; // Important to stop further execution after fail in infinite
+			// No delay needed, logic continues immediately
+			generateGameLogic(); // Regenerate level (will be level 1)
+			return; // Stop further execution for speedrun fail case
 		} else if (gameMode === "speedrun") {
 			console.log("Speedrun mode: Failed attempt at level", currentLevel);
 			// In speedrun, a fail on a level means you have to retry that level.
@@ -919,6 +1023,7 @@
 			levelFinished = false;
 			isClicking = false;
 
+			// No delay needed, logic continues immediately
 			generateGameLogic(); // Regenerate level (will be level 1)
 			return; // Stop further execution for speedrun fail case
 		} else if (gameMode === "training") {
@@ -927,15 +1032,13 @@
 			userClickedCells = [];
 			levelFinished = false;
 			isClicking = false;
+
+			// No delay needed, logic continues immediately
 			// Regenerate the level (same difficulty, new path)
 			generateGameLogic(); // This will use the existing currentDifficulty (selectedTrainingDifficulty)
 			return;
 		}
 		
-		userClickedCells = [];
-		levelFinished = false;
-		isClicking = false;
-
 		resetCellsVisualization(); 
 	}
 
