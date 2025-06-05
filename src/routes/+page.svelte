@@ -12,6 +12,7 @@
 	import { supabase } from '$lib/supabaseClient'; // Importer le client Supabase
 	import type { RealtimeChannel } from '@supabase/supabase-js';
 	import Button from '$lib/components/Button.svelte'; // Import the new Button component
+	import { particles, createParticles, updateAndDrawParticles, EXPLOSION_DURATION } from '$lib/explosionParticles';
 
 	let nickname = '';
 	let gameMode = ''; // 'speedrun', 'infinite' or 'training'
@@ -63,21 +64,6 @@
 	let currentKeybind = 'Space'; // User-friendly name (e.g., 'Space', 'Enter', 'a')
 	let isChangingKeybind = false;
 	const KEYBIND_STORAGE_KEY = 'psychopath-keybind';
-
-	interface Particle {
-		x: number;
-		y: number;
-		size: number;
-		color: string;
-		vx: number;
-		vy: number;
-		alpha: number;
-		life: number;
-		initialLife: number;
-	}
-
-	let particles: Particle[] = [];
-	let lastParticleAnimationTime: number = 0;
 
 	function getKeyForEventComparison(bindName: string): string {
 		if (bindName === 'Space') return ' ';
@@ -230,77 +216,7 @@
 	}
 	// --- End Flashlight Effect Logic ---
 
-	// --- Explosion Effect Logic ---
-	const EXPLOSION_DURATION = 300; // ms
-	const NUM_PARTICLES = 50;
-	const PARTICLE_SIZE = 5;
-	const PARTICLE_SPEED_MULTIPLIER = 4;
-
-	function triggerExplosion(centerX: number, centerY: number) {
-		particles = [];
-		for (let i = 0; i < NUM_PARTICLES; i++) {
-			const angle = Math.random() * 2 * Math.PI;
-			const speed = Math.random() * PARTICLE_SPEED_MULTIPLIER + 0.5; // Random speed between 0.5 and 2.5
-			particles.push({
-				x: centerX,
-				y: centerY,
-				size: PARTICLE_SIZE,
-				color: userCellsColor, // Use user's chosen color for particles
-				vx: Math.cos(angle) * speed,
-				vy: Math.sin(angle) * speed,
-				alpha: 1,
-				life: EXPLOSION_DURATION,
-				initialLife: EXPLOSION_DURATION,
-			});
-		}
-
-		lastParticleAnimationTime = performance.now();
-		requestAnimationFrame(animateParticles);
-	}
-
-	function animateParticles(currentTime: DOMHighResTimeStamp) {
-		if (!ctx) return;
-
-		const deltaTime = currentTime - lastParticleAnimationTime;
-		lastParticleAnimationTime = currentTime;
-
-		// Clear the canvas to redraw everything, including the grid
-		fillCanvas("#fff");
-		drawGrid("#000", currentDifficulty, currentDifficulty, 1);
-
-		// Redraw the generated path for the new level underneath the explosion
-		for (const cell of drawnCells) {
-			colorCell(cell[0], cell[1], cellPathColor);
-		}
-
-		for (let i = particles.length - 1; i >= 0; i--) {
-			const p = particles[i];
-
-			// Update particle position
-			p.x += p.vx * (deltaTime / 16.66); // Adjust velocity based on time (assuming 60fps base)
-			p.y += p.vy * (deltaTime / 16.66);
-
-			// Update particle life and alpha
-			p.life -= deltaTime;
-			p.alpha = Math.max(0, p.life / p.initialLife);
-
-			// Draw particle
-			ctx.save();
-			ctx.globalAlpha = p.alpha;
-			ctx.fillStyle = p.color;
-			ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-			ctx.restore();
-
-			// Remove dead particles
-			if (p.life <= 0) {
-				particles.splice(i, 1);
-			}
-		}
-
-		if (particles.length > 0) {
-			requestAnimationFrame(animateParticles);
-		}
-	}
+	// --- Explosion Effect Logic --- MOVED TO src/lib/explosionParticles.ts
 	// --- End Explosion Effect Logic ---
 
 	// --- Fonctions Supabase pour les scores ---
@@ -993,6 +909,22 @@
 		}
 	}
 	
+	function animateParticles(currentTime: DOMHighResTimeStamp) {
+		if (!ctx) return;
+
+		// Clear the canvas and redraw the grid and the path of the new level
+		fillCanvas("#fff");
+		drawGrid("#000", currentDifficulty, currentDifficulty, 1);
+		for (const cell of drawnCells) {
+			colorCell(cell[0], cell[1], cellPathColor);
+		}
+
+		// Update and draw explosion particles. If there are still particles, continue animation.
+		if (updateAndDrawParticles(ctx)) {
+			requestAnimationFrame(animateParticles);
+		}
+	}
+
 	function failedTryLogic() {
 		console.log("Attempt Failed!");
 
@@ -1003,14 +935,15 @@
 
 		// Trigger explosion at the last known mouse position
 		if (lastMouseX !== undefined && lastMouseY !== undefined) {
-			triggerExplosion(lastMouseX, lastMouseY);
+			createParticles(lastMouseX, lastMouseY, userCellsColor); // Use the imported function
+			requestAnimationFrame(animateParticles); // Start animation loop if not already running
 		}
 
 		if (gameMode === "infinite") {
 			console.log("Infinite mode: Total level completed:", currentLevel > 0 ? currentLevel -1 : 0);
-			// No delay needed, logic continues immediately
-			generateGameLogic(); // Regenerate level (will be level 1)
-			return; // Stop further execution for speedrun fail case
+			// For infinite, a fail means game over, go to lobby
+			handleLobbyClick();
+			return; // Important to stop further execution after fail in infinite
 		} else if (gameMode === "speedrun") {
 			console.log("Speedrun mode: Failed attempt at level", currentLevel);
 			// In speedrun, a fail on a level means you have to retry that level.
