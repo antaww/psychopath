@@ -64,6 +64,7 @@
 	let currentKeybind = 'Space'; // User-friendly name (e.g., 'Space', 'Enter', 'a')
 	let isChangingKeybind = false;
 	const KEYBIND_STORAGE_KEY = 'psychopath-keybind';
+	const NICKNAME_STORAGE_KEY = 'psychopath-nickname';
 
 	function getKeyForEventComparison(bindName: string): string {
 		if (bindName === 'Space') return ' ';
@@ -434,6 +435,9 @@
 				return;
 			}
 			console.log('Starting Speedrun. Nickname:', nickname);
+			if (browser) {
+				localStorage.setItem(NICKNAME_STORAGE_KEY, nickname);
+			}
 		} else if (gameMode === 'training') {
 			console.log('Starting Training with difficulty:', selectedTrainingDifficulty);
 			// No nickname validation needed. currentDifficulty will be set from selectedTrainingDifficulty.
@@ -479,6 +483,13 @@
 		personalBestRank = null;
 		finalTimeActualRank = null;
 		isNewPersonalBest = false;
+
+		if (browser) {
+			const storedNickname = localStorage.getItem(NICKNAME_STORAGE_KEY);
+			if (storedNickname) {
+				nickname = storedNickname;
+			}
+		}
 	}
 
 	function initGrid(difficulty: number) {
@@ -1055,6 +1066,10 @@
 	onMount(async () => {
 		if (browser) {
 			loadKeybindFromStorage(); // Load saved keybind
+			const storedNickname = localStorage.getItem(NICKNAME_STORAGE_KEY);
+			if (storedNickname) {
+				nickname = storedNickname;
+			}
 			await fetchScoreboard(); // Fetch initial scoreboard data
 
 			speedrunScoresChannel = supabase
