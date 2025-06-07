@@ -15,7 +15,7 @@
 	import { particles, createParticles, updateAndDrawParticles, EXPLOSION_DURATION } from '$lib/explosionParticles';
 
 	let nickname = '';
-	let gameMode = ''; // 'speedrun', 'infinite' or 'training'
+	let gameMode = ''; // 'speedrun', 'infinite' or 'training' or 'anxiety'
 	let isPlaying = false;
 	let currentLevel = 0;
 	let timerValue = 0; // Will be in milliseconds
@@ -65,6 +65,14 @@
 	let isChangingKeybind = false;
 	const KEYBIND_STORAGE_KEY = 'psychopath-keybind';
 	const NICKNAME_STORAGE_KEY = 'psychopath-nickname';
+
+	// Anxiety Mode State - START
+	let anxietyCountdownValue: number = 0; // In seconds
+	let anxietyCountdownInterval: number | undefined = undefined;
+	let anxietyLevel: number = 0; // Number of levels completed in anxiety mode
+	const ANXIETY_INITIAL_GRID_SIZE = 2; // Starting grid for anxiety mode
+	const ANXIETY_LEVEL_TIME_LIMIT = 10; // 10 seconds per level
+	// Anxiety Mode State - END
 
 	function getKeyForEventComparison(bindName: string): string {
 		if (bindName === 'Space') return ' ';
@@ -140,6 +148,7 @@
 		{ id: 'speedrun', text: 'Speedrun', color: 'green' as const, handlerFunction: handlePlaySpeedrun },
 		{ id: 'training', text: 'Training', color: 'lightorange' as const, handlerFunction: handlePlayTraining }
 		// { id: 'infinite', text: 'Infinite', color: 'green', handler: handlePlayInfinite } // Can be added later
+		, { id: 'anxiety', text: 'Anxiety', color: 'red' as const, handlerFunction: handlePlayAnxiety }
 	];
 	let currentGameModeIndex = 0;
 	let slideInX = 0; // Initial animation state (0 means no slide for the first item)
@@ -182,6 +191,17 @@
 	let scoreboardEntries: ScoreEntry[] = [];
 	let speedrunScoresChannel: RealtimeChannel | null = null;
 	let scoreboardPollInterval: number | undefined = undefined; // For polling
+
+	// Supabase score interfaces for Anxiety mode
+	interface AnxietyScoreEntry {
+		id: number;
+		pseudo: string;
+		levels_completed: number;
+		created_at: string;
+	}
+	let anxietyScoreboardEntries: AnxietyScoreEntry[] = [];
+	let anxietyScoresChannel: RealtimeChannel | null = null;
+	let anxietyScoreboardPollInterval: number | undefined = undefined;
 
 	function handleModalBackdropKeydown(handlerFunction: () => void) {
 		return (event: KeyboardEvent) => {
@@ -411,6 +431,14 @@
 		console.log('Play Training');
 	}
 
+	function handlePlayAnxiety() {
+		gameMode = 'anxiety';
+		selectedTrainingDifficulty = 0; // Not used, but reset for clarity
+		nickname = ''; // Will be used, but allow user to enter (similar to speedrun)
+		anxietyLevel = 0; // Reset
+		console.log('Play Anxiety');
+	}
+
 	function sanitizeNickname(value: string): string {
 		return value.replace(/[^a-zA-Z0-9_]/g, '');
 	}
@@ -441,6 +469,15 @@
 		} else if (gameMode === 'training') {
 			console.log('Starting Training with difficulty:', selectedTrainingDifficulty);
 			// No nickname validation needed. currentDifficulty will be set from selectedTrainingDifficulty.
+		} else if (gameMode === 'anxiety') {
+			if (!isNicknameValid) {
+				console.warn("Attempted to start anxiety mode with invalid nickname.");
+				return;
+			}
+			console.log('Starting Anxiety mode. Nickname:', nickname);
+			if (browser) {
+				localStorage.setItem(NICKNAME_STORAGE_KEY, nickname);
+			}
 		} else {
 			console.warn("Unknown game mode for starting game:", gameMode);
 			return;
@@ -457,6 +494,10 @@
 		} else if (gameMode === 'training') {
 			// Timer is not used in training mode
 			initGrid(selectedTrainingDifficulty);
+		} else if (gameMode === 'anxiety') {
+			anxietyLevel = 0; // Reset before starting new game
+			initGrid(ANXIETY_INITIAL_GRID_SIZE); // Initial grid size for anxiety mode
+			// Countdown will start in generateGameLogic
 		}
 		// Common logic after mode-specific setup
 		await generateGameLogic(); // This will increment currentLevel to 1
@@ -475,6 +516,10 @@
 			stopTimer();
 		}
 		timerValue = 0;
+		stopAnxietyCountdown(); // Stop anxiety countdown
+		anxietyCountdownValue = ANXIETY_LEVEL_TIME_LIMIT; // Reset countdown display
+		anxietyLevel = 0; // Reset anxiety level
+
 		if (ctx && canvasElement) {
 			ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 		}
@@ -483,6 +528,7 @@
 		personalBestRank = null;
 		finalTimeActualRank = null;
 		isNewPersonalBest = false;
+		previousPersonalBestMs = null;
 
 		if (browser) {
 			const storedNickname = localStorage.getItem(NICKNAME_STORAGE_KEY);
@@ -563,6 +609,13 @@
 			isPlaying = true;
 			// currentLevel = 0; // This will be incremented by generateGameLogic - already handled
 			timerValue = 0;
+		} else if (gameMode === "anxiety") {
+			// Increment anxietyLevel for each completed level
+			anxietyLevel++;
+			// Increase grid size for each level
+			currentDifficulty = ANXIETY_INITIAL_GRID_SIZE + anxietyLevel - 1;
+			// Start countdown for the level
+			startAnxietyCountdown();
 		}
 
 		if (gameMode === "speedrun" && levelsCount === 1 && currentLevel === 1) {
@@ -799,6 +852,13 @@
 
 		if (levelFinished) {
 			levelFinished = false; 
+			if (gameMode === 'anxiety') {
+				stopAnxietyCountdown(); // Stop countdown immediately when level is finished
+				// Save score and check for new personal best for anxiety mode if player is valid
+				if (nickname.trim() !== '') {
+					saveAnxietyScore(nickname, anxietyLevel);
+				}
+			}
 			generateGameLogic(); 
 		} else {
 			// If mouse up and path is not complete and correct, it's a fail on the current attempt
@@ -981,6 +1041,18 @@
 			// Regenerate the level (same difficulty, new path)
 			generateGameLogic(); // This will use the existing currentDifficulty (selectedTrainingDifficulty)
 			return;
+		} else if (gameMode === "anxiety") {
+			console.log(`Anxiety mode: Failed attempt at level ${anxietyLevel}`);
+			// Game over for anxiety mode: show game over screen, save score if new high, then reset fully
+			isPlaying = false; // Stop game interactions
+			showGameOverScreen = true; // Show the game over UI immediately
+			stopAnxietyCountdown(); // Stop countdown
+
+			// Save score for anxiety mode if there's a nickname and levels were completed
+			if (nickname.trim() !== '' && anxietyLevel > 0) {
+				saveAnxietyScore(nickname, anxietyLevel);
+			}
+			return; // Stop further execution for anxiety fail case
 		}
 		
 		resetCellsVisualization(); 
@@ -1017,6 +1089,17 @@
 			console.log("Reset Clicked for Infinite");
 			currentLevel = 0; // This will be incremented by generateGameLogic
 			generateGameLogic();
+		} else if (gameMode === "anxiety") {
+			console.log("Back to lobby from Anxiety mode");
+			isPlaying = false; // This will take the user back to the lobby
+			anxietyLevel = 0; // Reset anxiety level
+			currentDifficulty = ANXIETY_INITIAL_GRID_SIZE; // Reset grid size
+			stopAnxietyCountdown(); // Stop countdown
+
+			// Clear canvas
+			if (ctx && canvasElement) {
+				ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+			}
 		} else {
 			// Default for other modes if any
 			console.log("Reset Clicked (default case)");
@@ -1037,19 +1120,27 @@
 		previousPersonalBestMs = null;
 		finalTimeMs = 0;
 
-		// Reset game state for a new speedrun with the same nickname
+		// Anxiety specific reset
+		stopAnxietyCountdown();
+		anxietyCountdownValue = ANXIETY_LEVEL_TIME_LIMIT;
+		anxietyLevel = 0;
+
+		// Reset game state for a new game
 		isPlaying = true;
 		currentLevel = 0; // Will be incremented to 1 by generateGameLogic
-		timerValue = 0;
+		timerValue = 0; // For speedrun mode
 
 		await tick(); // Ensure DOM is updated if canvas needs to be re-rendered or accessed
 
 		if (gameMode === 'speedrun') {
 			startTimer();
+			initGrid(5); // Initial difficulty for speedrun is 5
+		} else if (gameMode === 'anxiety') {
+			initGrid(ANXIETY_INITIAL_GRID_SIZE); // Initial grid size
 		}
 		// initGrid might not be strictly necessary if difficulty logic is self-contained in generateGameLogic
 		// but good for consistency if it resets any visual state tied to difficulty.
-		initGrid(5); // Or determine initial difficulty based on gameMode settings
+		
 		await generateGameLogic();
 	}
 
@@ -1063,6 +1154,93 @@
 		selectedTrainingDifficulty = size;
 	}
 
+	function startAnxietyCountdown() {
+		stopAnxietyCountdown(); // Clear any existing countdown
+		anxietyCountdownValue = ANXIETY_LEVEL_TIME_LIMIT; // Reset countdown
+
+		anxietyCountdownInterval = window.setInterval(() => {
+			anxietyCountdownValue--;
+			if (anxietyCountdownValue <= 0) {
+				stopAnxietyCountdown();
+				// If countdown reaches 0 and game is still playing, it's a fail
+				if (isPlaying && gameMode === 'anxiety') {
+					console.log("Anxiety countdown ran out!");
+					failedTryLogic();
+				}
+			}
+		}, 1000); // Update every second
+	}
+
+	function stopAnxietyCountdown() {
+		if (anxietyCountdownInterval !== undefined) {
+			window.clearInterval(anxietyCountdownInterval);
+			anxietyCountdownInterval = undefined;
+		}
+	}
+
+	// --- Supabase functions for Anxiety scores --- START
+	async function saveAnxietyScore(playerName: string, levelsCompleted: number) {
+		if (!playerName) {
+			console.log('Player name is empty, anxiety score not saved.');
+			return;
+		}
+		const lowerPlayerName = playerName.toLowerCase();
+
+		try {
+			// Fetch the existing score
+			const { data: existingScoreData, error: fetchError } = await supabase
+				.from('anxiety_scores')
+				.select('levels_completed')
+				.eq('pseudo', lowerPlayerName)
+				.single();
+
+			if (fetchError && fetchError.code !== 'PGRST116') {
+				console.error('Error fetching existing anxiety score:', fetchError);
+				return;
+			}
+
+			const existingLevelsCompleted = existingScoreData?.levels_completed;
+
+			// Compare and decide to update/insert
+			if (existingLevelsCompleted === undefined || levelsCompleted > existingLevelsCompleted) {
+				const { data, error: upsertError } = await supabase
+					.from('anxiety_scores')
+					.upsert({ pseudo: lowerPlayerName, levels_completed: levelsCompleted }, { onConflict: 'pseudo' });
+
+				if (upsertError) {
+					console.error('Error saving/updating anxiety score:', upsertError);
+				} else {
+					console.log('Anxiety score saved/updated:', data);
+				}
+			} else {
+				console.log(`New anxiety score (${levelsCompleted} levels) is not better than existing score (${existingLevelsCompleted} levels) for ${lowerPlayerName}. Not updating.`);
+			}
+		} catch (error) {
+			console.error('Exception in saveAnxietyScore:', error);
+		}
+	}
+
+	async function fetchAnxietyScoreboard() {
+		try {
+			const { data, error } = await supabase
+				.from('anxiety_scores')
+				.select('id, pseudo, levels_completed, created_at')
+				.order('levels_completed', { ascending: false })
+				.limit(5);
+
+			if (error) {
+				console.error('Error fetching anxiety scoreboard:', error);
+				anxietyScoreboardEntries = [];
+			} else {
+				anxietyScoreboardEntries = data as AnxietyScoreEntry[];
+			}
+		} catch (error) {
+			console.error('Exception fetching anxiety scoreboard:', error);
+			anxietyScoreboardEntries = [];
+		}
+	}
+	// --- Supabase functions for Anxiety scores --- END
+
 	onMount(async () => {
 		if (browser) {
 			loadKeybindFromStorage(); // Load saved keybind
@@ -1070,7 +1248,8 @@
 			if (storedNickname) {
 				nickname = storedNickname;
 			}
-			await fetchScoreboard(); // Fetch initial scoreboard data
+			await fetchScoreboard(); // Fetch initial speedrun scoreboard data
+			await fetchAnxietyScoreboard(); // Fetch initial anxiety scoreboard data
 
 			speedrunScoresChannel = supabase
 				.channel('speedrun_scores_changes')
@@ -1078,15 +1257,33 @@
 					'postgres_changes',
 					{ event: '*', schema: 'public', table: 'speedrun_scores' },
 					(payload) => {
-						console.log('Change received!', payload);
-						fetchScoreboard(); // Re-fetch scoreboard on any change
+						console.log('Speedrun Score change received!', payload);
+						fetchScoreboard(); // Re-fetch speedrun scoreboard on any change
 					}
 				)
 				.subscribe((status, err) => {
 					if (status === 'SUBSCRIBED') {
 						console.log('Subscribed to speedrun_scores changes!');
 					} else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-						console.error('Subscription error or timed out:', err, 'Status:', status);
+						console.error('Speedrun Score subscription error or timed out:', err, 'Status:', status);
+					}
+				});
+
+			anxietyScoresChannel = supabase
+				.channel('anxiety_scores_changes')
+				.on(
+					'postgres_changes',
+					{ event: '*', schema: 'public', table: 'anxiety_scores' },
+					(payload) => {
+						console.log('Anxiety Score change received!', payload);
+						fetchAnxietyScoreboard();
+					}
+				)
+				.subscribe((status, err) => {
+					if (status === 'SUBSCRIBED') {
+						console.log('Subscribed to anxiety_scores changes!');
+					} else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+						console.error('Anxiety Score subscription error or timed out:', err, 'Status:', status);
 					}
 				});
 
@@ -1094,6 +1291,10 @@
 			scoreboardPollInterval = window.setInterval(async () => {
 				await fetchScoreboard();
 			}, 5000); // 5000 milliseconds = 5 seconds
+
+			anxietyScoreboardPollInterval = window.setInterval(async () => {
+				await fetchAnxietyScoreboard();
+			}, 5000);
 
 			window.addEventListener('keydown', handleGlobalKeyDown);
 			window.addEventListener('keyup', handleGlobalKeyUp);
@@ -1103,14 +1304,24 @@
 	onDestroy(() => {
 		if (browser) {
 			stopTimer();
+			stopAnxietyCountdown(); // Ensure anxiety countdown is stopped
+
 			if (speedrunScoresChannel) {
 				supabase.removeChannel(speedrunScoresChannel)
 					.then(() => console.log("Unsubscribed from speedrun_scores_changes"))
 					.catch(err => console.error("Error unsubscribing:", err));
 			}
+			if (anxietyScoresChannel) {
+				supabase.removeChannel(anxietyScoresChannel)
+					.then(() => console.log("Unsubscribed from anxiety_scores_changes"))
+					.catch(err => console.error("Error unsubscribing:", err));
+			}
 			// Clear the polling interval
 			if (scoreboardPollInterval !== undefined) {
 				window.clearInterval(scoreboardPollInterval);
+			}
+			if (anxietyScoreboardPollInterval !== undefined) {
+				window.clearInterval(anxietyScoreboardPollInterval);
 			}
 
 			window.removeEventListener('keydown', handleGlobalKeyDown);
@@ -1132,15 +1343,28 @@
 
 <!-- Structure HTML reprise de votre index.html original -->
 <div class="scoreboard rubberBand">
-	<h3>Scoreboard (Speedrun)</h3>
-	{#if scoreboardEntries.length > 0}
-		<ol>
-			{#each scoreboardEntries as entry (entry.id)}
-				<li>{entry.pseudo} : {formatTime(entry.time_ms)}</li>
-			{/each}
-		</ol>
-	{:else}
-		<p>No scores yet. Be the first!</p>
+	{#if gameMode === '' || gameMode === 'speedrun'}
+		<h3>Scoreboard (Speedrun)</h3>
+		{#if scoreboardEntries.length > 0}
+			<ol>
+				{#each scoreboardEntries as entry (entry.id)}
+					<li>{entry.pseudo} : {formatTime(entry.time_ms)}</li>
+				{/each}
+			</ol>
+		{:else}
+			<p>No scores yet. Be the first!</p>
+		{/if}
+	{:else if gameMode === 'anxiety'}
+		<h3>Scoreboard (Anxiety)</h3>
+		{#if anxietyScoreboardEntries.length > 0}
+			<ol>
+				{#each anxietyScoreboardEntries as entry (entry.id)}
+					<li>{entry.pseudo} : {entry.levels_completed} levels</li>
+				{/each}
+			</ol>
+		{:else}
+			<p>No scores yet. Be the first!</p>
+		{/if}
 	{/if}
 </div>
 
@@ -1175,7 +1399,7 @@
 	{/if}
 
 	{#if !isPlaying && gameMode !== ''}
-		{#if gameMode === 'speedrun'}
+		{#if gameMode === 'speedrun' || gameMode === 'anxiety'}
 			<div class="nickname-container">
 				<input
 					type="text"
@@ -1250,15 +1474,11 @@
 		<div class="inGameButtons">
 			{#if gameMode === 'speedrun'}
 				<Button text={formatTime(timerValue)} color="purple" animation="" disableHoverEffect={true} />
-				<Button
-					text="Back"
-					color="blue"
-					onClick={handleResetClick}
-					animation=""
-				/>
+			{:else if gameMode === 'anxiety'}
+				<Button text={`Countdown: ${anxietyCountdownValue}`} color="red" animation="" disableHoverEffect={true} />
 			{/if}
 			<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" /> 
-			{#if gameMode === 'training'}
+			{#if gameMode === 'training' || gameMode === 'anxiety'}
 				<Button 
 					text="Back" 
 					color="blue" 
@@ -1272,7 +1492,12 @@
 
 <div class="game-info">
 	{#if isPlaying}
-		<Button text="Level {currentLevel}" color="yellow" animation="" disableHoverEffect={true} additionalClasses="level difficulty-button" />
+		<!-- `currentLevel` is used for display in training/speedrun. For anxiety, we use `anxietyLevel` below. -->
+		{#if gameMode !== 'anxiety'}
+			<Button text="Level {currentLevel}" color="yellow" animation="" disableHoverEffect={true} additionalClasses="level difficulty-button" />
+		{:else if gameMode === 'anxiety'}
+			<Button text={`Level ${anxietyLevel}`} color="yellow" animation="" disableHoverEffect={true} additionalClasses="level difficulty-button" />
+		{/if}
 		<canvas 
 			class="grid" 
 			bind:this={canvasElement} 
@@ -1311,7 +1536,8 @@
 			- <strong><span class="rules-text-green-outline">Speedrun</span> :</strong> Complete 15 levels as fast as possible. Your time will be recorded on the scoreboard.<br />
 			- <strong><span class="rules-text-blue-outline">Training</span> :</strong> Choose your grid size and practice as much as you want. Mistakes reset the current path.<br />
 			- <strong><span class="rules-text-purple-outline">Infinite</span> :</strong> Play as many levels as you can. The difficulty increases randomly. <span class="rules-text-red-outline">(Coming soon!)</span><br /><br />
-			Be careful, any mistake will make you <span class="rules-text-lightred-outline">restart the game</span> (in Speedrun) or <span class="rules-text-red-outline">end the game</span> (in Infinite).
+			- <strong><span class="rules-text-red-outline">Anxiety</span> :</strong> Start with a 2x2 grid. The grid size increases every level. You have 10 seconds per level. Fail, and you restart from 2x2.<br /><br />
+			Be careful, any mistake will make you <span class="rules-text-lightred-outline">restart the game</span> (in Speedrun) or <span class="rules-text-red-outline">end the game</span> (in Infinite/Anxiety).
 		</p>
 		<Button text="Close" color="orange" onClick={toggleRulesModal} animation="" />
 	</div>
@@ -1346,6 +1572,27 @@
 			</p>
 		{/if}
 
+		<div class="game-over-buttons">
+			<Button text="Play Again" color="green" onClick={handlePlayAgainFromGameOver} animation="bounceInDown" />
+			<Button text="Lobby" color="orange" onClick={handleLobbyFromGameOver} animation="bounceInDown" />
+		</div>
+	</div>
+{/if}
+
+<!-- Game Over Screen for Anxiety -->
+{#if showGameOverScreen && gameMode === 'anxiety'}
+	<div 
+		class="modal-backdrop" 
+		on:click={handleLobbyFromGameOver}
+		role="button"
+		tabindex="0"
+		on:keydown={handleModalBackdropKeydown(handleLobbyFromGameOver)}
+		aria-label="Close game over modal"
+	></div>
+	<div class="modal game-over-modal {showGameOverScreen ? 'modal-box-bounce-animation is-visible' : 'modal-leave'}">
+		<h2>Anxiety Mode Game Over!</h2>
+		<p class="final-time">Levels Completed: {anxietyLevel}</p>
+		<!-- Optionally show rank here if implementing one for anxiety mode -->
 		<div class="game-over-buttons">
 			<Button text="Play Again" color="green" onClick={handlePlayAgainFromGameOver} animation="bounceInDown" />
 			<Button text="Lobby" color="orange" onClick={handleLobbyFromGameOver} animation="bounceInDown" />
