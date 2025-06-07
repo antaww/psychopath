@@ -610,10 +610,9 @@
 			// currentLevel = 0; // This will be incremented by generateGameLogic - already handled
 			timerValue = 0;
 		} else if (gameMode === "anxiety") {
-			// Increment anxietyLevel for each completed level
-			anxietyLevel++;
-			// Increase grid size for each level
-			currentDifficulty = ANXIETY_INITIAL_GRID_SIZE + anxietyLevel - 1;
+			// The difficulty for the current level (which is about to be drawn) is based on
+			// the number of levels *already successfully completed*.
+			currentDifficulty = ANXIETY_INITIAL_GRID_SIZE + anxietyLevel;
 			// Start countdown for the level
 			startAnxietyCountdown();
 		}
@@ -854,6 +853,7 @@
 			levelFinished = false; 
 			if (gameMode === 'anxiety') {
 				stopAnxietyCountdown(); // Stop countdown immediately when level is finished
+				anxietyLevel++; // Increment levels completed ONLY on success
 				// Save score and check for new personal best for anxiety mode if player is valid
 				if (nickname.trim() !== '') {
 					saveAnxietyScore(nickname, anxietyLevel);
@@ -1049,6 +1049,7 @@
 			stopAnxietyCountdown(); // Stop countdown
 
 			// Save score for anxiety mode if there's a nickname and levels were completed
+			console.log(`Anxiety mode failed. Levels completed at time of failure: ${anxietyLevel}`);
 			if (nickname.trim() !== '' && anxietyLevel > 0) {
 				saveAnxietyScore(nickname, anxietyLevel);
 			}
@@ -1496,7 +1497,7 @@
 		{#if gameMode !== 'anxiety'}
 			<Button text="Level {currentLevel}" color="yellow" animation="" disableHoverEffect={true} additionalClasses="level difficulty-button" />
 		{:else if gameMode === 'anxiety'}
-			<Button text={`Level ${anxietyLevel}`} color="yellow" animation="" disableHoverEffect={true} additionalClasses="level difficulty-button" />
+			<Button text="Level {anxietyLevel + 1}" color="yellow" animation="" disableHoverEffect={true} additionalClasses="level difficulty-button" />
 		{/if}
 		<canvas 
 			class="grid" 
