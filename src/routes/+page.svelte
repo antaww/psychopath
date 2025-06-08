@@ -1748,6 +1748,9 @@
 	<div class="modal game-over-modal {showGameOverScreen ? 'modal-box-bounce-animation is-visible' : 'modal-leave'}">
 		<h2>Anxiety Mode Game Over!</h2>
 		<p class="final-time">Levels Completed: {anxietyLevel}</p>
+		{#if anxietyLevel === 0}
+			<p class="personal-best-new" style="font-size: .9em;">Did you even try? 😂</p>
+		{/if}
 		{#if anxietyFinalLevelsActualRank !== null}
 			<p class="final-time-rank">(This run's rank: {anxietyFinalLevelsActualRank})</p>
 		{/if}
