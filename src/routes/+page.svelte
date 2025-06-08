@@ -1698,10 +1698,9 @@
 			The goal of the game is to <span class="rules-text-orange-outline">reproduce the highlighted path</span> on the grid.<br />
 			<u>Click and drag</u> your mouse to draw your path.<br />
 			- <strong><span class="rules-text-green-outline">Speedrun</span> :</strong> Complete 15 levels as fast as possible. Your time will be recorded on the scoreboard.<br />
-			- <strong><span class="rules-text-blue-outline">Training</span> :</strong> Choose your grid size and practice as much as you want. Mistakes reset the current path.<br />
-			- <strong><span class="rules-text-purple-outline">Infinite</span> :</strong> Play as many levels as you can. The difficulty increases randomly. <span class="rules-text-red-outline">(Coming soon!)</span><br /><br />
-			- <strong><span class="rules-text-red-outline">Anxiety</span> :</strong> Start with a 2x2 grid. The grid size increases every level. You have 10 seconds per level. Fail, and you restart from 2x2.<br /><br />
-			Be careful, any mistake will make you <span class="rules-text-lightred-outline">restart the game</span> (in Speedrun) or <span class="rules-text-red-outline">end the game</span> (in Infinite/Anxiety).
+			- <strong><span class="rules-text-red-outline">Anxiety</span> :</strong> Start with a 2x2 grid. The grid size increases every level. You have 10 seconds per level. Fail, and you restart from 2x2.<br />
+			- <strong><span class="rules-text-orange-outline">Training</span> :</strong> Choose your grid size and practice as much as you want. Mistakes reset the current path.<br /><br />
+			Be careful, any mistake will make you <span class="rules-text-lightred-outline">restart the game</span> (in Speedrun) or <span class="rules-text-red-outline">end the game</span> (in Anxiety).
 		</p>
 		<Button text="Close" color="orange" onClick={toggleRulesModal} animation="" />
 	</div>
