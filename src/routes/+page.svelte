@@ -1515,7 +1515,7 @@
 			{#if anxietyScoreboardEntries.length > 0}
 				<ol>
 					{#each anxietyScoreboardEntries as entry (entry.id)}
-						<li>{entry.pseudo} : {entry.levels_completed} levels</li>
+						<li>{entry.pseudo} : {entry.levels_completed} level{entry.levels_completed > 1 ? 's' : ''}</li>
 					{/each}
 				</ol>
 			{:else}
