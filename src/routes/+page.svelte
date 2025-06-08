@@ -323,7 +323,7 @@
 			const { data: existingScoreData, error: fetchError } = await supabase
 				.from('anxiety_scores')
 				.select('levels_completed')
-				.eq('pseudo', lowerPlayerName)
+				.ilike('pseudo', lowerPlayerName)
 				.single();
 
 			if (fetchError && fetchError.code !== 'PGRST116') {
@@ -349,28 +349,36 @@
 			console.log('Player name is empty, score not saved.');
 			return;
 		}
-		const lowerPlayerName = playerName.toLowerCase();
+		const inputPlayerName = playerName.trim();
+		const lowerInputPlayerName = inputPlayerName.toLowerCase();
 
 		try {
-			// 1. Fetch the existing score
-			const { data: existingScoreData, error: fetchError } = await supabase
+			// Step 1: Find if a player with this nickname (case-insensitive) already exists
+			const { data: existingPlayerInfo, error: findError } = await supabase
 				.from('speedrun_scores')
-				.select('time_ms')
-				.eq('pseudo', lowerPlayerName)
-				.single(); // We expect 0 or 1 result
+				.select('pseudo, time_ms') // Fetch existing pseudo (original casing) and time
+				.ilike('pseudo', lowerInputPlayerName) // Case-insensitive lookup
+				.limit(1); // We only need one match
 
-			// PGRST116 means "Query returned 0 rows", which is normal if the player doesn't have a score yet.
-			if (fetchError && fetchError.code !== 'PGRST116') { 
-				console.error('Error fetching existing score:', fetchError);
-				// Try to get rank of current time even if fetching existing score fails
-				finalTimeActualRank = await fetchPlayerRank(lowerPlayerName, timeInMilliseconds);
-				return;
+			if (findError && findError.code !== 'PGRST116') { // PGRST116 is "No rows found"
+				console.error('Error finding existing player by pseudo (case-insensitive):', findError);
+				// Continue to try to save/update using the inputPlayerName as fallback
 			}
 
-			// 1. Always fetch the rank of the time they just got.
-			finalTimeActualRank = await fetchPlayerRank(lowerPlayerName, timeInMilliseconds);
+			let pseudoToUseInDb = inputPlayerName;
+			let existingTimeMs = undefined;
+			if (existingPlayerInfo && existingPlayerInfo.length > 0) {
+				// A case-insensitive match was found, use its original casing for consistency
+				pseudoToUseInDb = existingPlayerInfo[0].pseudo;
+				existingTimeMs = existingPlayerInfo[0].time_ms;
+				console.log(`Found existing player ''${pseudoToUseInDb}'' (original casing) for input ''${inputPlayerName}''.`);
+			} else {
+				console.log(`No existing player found for ''${inputPlayerName}''. Will insert with original casing.`);
+			}
 
-			const existingTimeMs = existingScoreData?.time_ms;
+			// 1. Always fetch the rank of the time they just got, using the determined pseudo.
+			finalTimeActualRank = await fetchPlayerRank(pseudoToUseInDb, timeInMilliseconds);
+
 			previousPersonalBestMs = existingTimeMs ?? null; // Store previous PB regardless
 
 			// 2. Compare and decide to update/insert
@@ -378,7 +386,7 @@
 				isNewPersonalBest = true;
 				const { data, error: upsertError } = await supabase
 					.from('speedrun_scores')
-					.upsert({ pseudo: lowerPlayerName, time_ms: timeInMilliseconds }, { onConflict: 'pseudo' });
+					.upsert({ pseudo: pseudoToUseInDb, time_ms: timeInMilliseconds }, { onConflict: 'pseudo' });
 
 				if (upsertError) {
 					console.error('Error saving/updating speedrun score:', upsertError);
@@ -390,10 +398,10 @@
 				}
 			} else {
 				isNewPersonalBest = false;
-				console.log(`New score (${formatTime(timeInMilliseconds)}) is not better than existing score (${formatTime(existingTimeMs)}) for ${lowerPlayerName}. Not updating.`);
+				console.log(`New score (${formatTime(timeInMilliseconds)}) is not better than existing score (${formatTime(existingTimeMs)}) for ${pseudoToUseInDb}. Not updating.`);
 				// Score not updated, so PB rank is based on their existing best score
 				if (existingTimeMs !== undefined) {
-					personalBestRank = await fetchPlayerRank(lowerPlayerName, existingTimeMs);
+					personalBestRank = await fetchPlayerRank(pseudoToUseInDb, existingTimeMs);
 				} else {
 					// This case should ideally not happen if !isNewPersonalBest, means no existing score but also not a new best.
 					// For safety, set personalBestRank to the current time's rank, as it's the only score we know.
@@ -404,7 +412,7 @@
 			console.error('Exception in saveSpeedrunScore:', error);
 			// Attempt to fetch rank for current time even on general exception
 			if (timeInMilliseconds > 0 && finalTimeActualRank === null) { // Check if not already set
-				finalTimeActualRank = await fetchPlayerRank(lowerPlayerName, timeInMilliseconds);
+				finalTimeActualRank = await fetchPlayerRank(inputPlayerName, timeInMilliseconds);
 			}
 		}
 	}
@@ -416,7 +424,7 @@
 			const { data: existingScoreData, error: fetchError } = await supabase
 				.from('speedrun_scores')
 				.select('time_ms')
-				.eq('pseudo', lowerPlayerName)
+				.ilike('pseudo', lowerPlayerName)
 				.single();
 
 			if (fetchError && fetchError.code !== 'PGRST116') {
@@ -1288,26 +1296,34 @@
 			console.log('Player name is empty, anxiety score not saved.');
 			return;
 		}
-		const lowerPlayerName = playerName.toLowerCase();
+		const inputPlayerName = playerName.trim();
+		const lowerInputPlayerName = inputPlayerName.toLowerCase();
 
 		try {
-			// 1. Always fetch the rank of the levels they just got.
-			anxietyFinalLevelsActualRank = await fetchAnxietyPlayerRank(lowerPlayerName, levelsCompleted);
-
-			// 2. Fetch the existing score
-			const { data: existingScoreData, error: fetchError } = await supabase
+			// Step 1: Find if a player with this nickname (case-insensitive) already exists
+			const { data: existingPlayerInfo, error: findError } = await supabase
 				.from('anxiety_scores')
-				.select('levels_completed')
-				.eq('pseudo', lowerPlayerName)
-				.single();
+				.select('pseudo, levels_completed') // Fetch existing pseudo (original casing) and levels_completed
+				.ilike('pseudo', lowerInputPlayerName) // Case-insensitive lookup
+				.limit(1); // We only need one match
 
-			// PGRST116 means "Query returned 0 rows", which is normal if the player doesn't have a score yet.
-			if (fetchError && fetchError.code !== 'PGRST116') {
-				console.error('Error fetching existing anxiety score:', fetchError);
-				return;
+			if (findError && findError.code !== 'PGRST116') {
+				console.error('Error finding existing player by pseudo (case-insensitive) for anxiety:', findError);
 			}
 
-			const existingLevelsCompleted = existingScoreData?.levels_completed;
+			let pseudoToUseInDb = inputPlayerName;
+			let existingLevelsCompleted = undefined;
+			if (existingPlayerInfo && existingPlayerInfo.length > 0) {
+				pseudoToUseInDb = existingPlayerInfo[0].pseudo;
+				existingLevelsCompleted = existingPlayerInfo[0].levels_completed;
+				console.log(`Found existing player ''${pseudoToUseInDb}'' (original casing) for input ''${inputPlayerName}'' in anxiety mode.`);
+			} else {
+				console.log(`No existing player found for ''${inputPlayerName}''. Will insert with original casing in anxiety mode.`);
+			}
+
+			// 1. Always fetch the rank of the levels they just got, using the determined pseudo.
+			anxietyFinalLevelsActualRank = await fetchAnxietyPlayerRank(pseudoToUseInDb, levelsCompleted);
+
 			// Note: previousAnxietyPersonalBestLevels is set at the start of the game.
 			// Use it to determine if this run is a new PB compared to the game's start.
 			isNewAnxietyPersonalBest = (previousAnxietyPersonalBestLevels === null || levelsCompleted > previousAnxietyPersonalBestLevels);
@@ -1319,7 +1335,7 @@
 			if (existingLevelsCompleted === undefined || levelsCompleted > existingLevelsCompleted) {
 				const { data, error: upsertError } = await supabase
 					.from('anxiety_scores')
-					.upsert({ pseudo: lowerPlayerName, levels_completed: levelsCompleted }, { onConflict: 'pseudo' });
+					.upsert({ pseudo: pseudoToUseInDb, levels_completed: levelsCompleted }, { onConflict: 'pseudo' });
 
 				if (upsertError) {
 					console.error('Error saving/updating anxiety score:', upsertError);
@@ -1330,16 +1346,16 @@
 					if (isNewAnxietyPersonalBest) {
 						anxietyPersonalBestRank = anxietyFinalLevelsActualRank; 
 					} else if (existingLevelsCompleted !== undefined) {
-						anxietyPersonalBestRank = await fetchAnxietyPlayerRank(lowerPlayerName, existingLevelsCompleted);
+						anxietyPersonalBestRank = await fetchAnxietyPlayerRank(pseudoToUseInDb, existingLevelsCompleted);
 					} else {
 						anxietyPersonalBestRank = anxietyFinalLevelsActualRank; // Fallback if no existing score but not new PB
 					}
 				}
 			} else {
-				console.log(`New anxiety score (${levelsCompleted} levels) is not better than existing score (${existingLevelsCompleted} levels) for ${lowerPlayerName}. Not updating.`);
+				console.log(`New anxiety score (${levelsCompleted} levels) is not better than existing score (${existingLevelsCompleted} levels) for ${pseudoToUseInDb}. Not updating.`);
 				// Score not updated in DB, so PB rank is based on their existing best score from DB.
 				if (existingLevelsCompleted !== undefined) {
-					anxietyPersonalBestRank = await fetchAnxietyPlayerRank(lowerPlayerName, existingLevelsCompleted);
+					anxietyPersonalBestRank = await fetchAnxietyPlayerRank(pseudoToUseInDb, existingLevelsCompleted);
 				} else {
 					anxietyPersonalBestRank = anxietyFinalLevelsActualRank;
 				}
@@ -1348,7 +1364,7 @@
 			console.error('Exception in saveAnxietyScore:', error);
 			// Attempt to fetch rank for current levels even on general exception
 			if (levelsCompleted > 0 && anxietyFinalLevelsActualRank === null) { // Check if not already set
-				anxietyFinalLevelsActualRank = await fetchAnxietyPlayerRank(lowerPlayerName, levelsCompleted);
+				anxietyFinalLevelsActualRank = await fetchAnxietyPlayerRank(inputPlayerName, levelsCompleted);
 			}
 		}
 	}
