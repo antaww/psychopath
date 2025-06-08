@@ -152,9 +152,9 @@
 	// Game Mode Swiper Logic - START
 	const gameModeOptions = [
 		{ id: 'speedrun', text: 'Speedrun', color: 'green' as const, handlerFunction: handlePlaySpeedrun },
-		{ id: 'training', text: 'Training', color: 'lightorange' as const, handlerFunction: handlePlayTraining }
+		{ id: 'anxiety', text: 'Anxiety', color: 'red' as const, handlerFunction: handlePlayAnxiety },
+		{ id: 'training', text: 'Training', color: 'lightorange' as const, handlerFunction: handlePlayTraining },
 		// { id: 'infinite', text: 'Infinite', color: 'green', handler: handlePlayInfinite } // Can be added later
-		, { id: 'anxiety', text: 'Anxiety', color: 'red' as const, handlerFunction: handlePlayAnxiety }
 	];
 	let currentGameModeIndex = 0;
 	let slideInX = 0; // Initial animation state (0 means no slide for the first item)
