@@ -1504,31 +1504,33 @@
 </h1>
 
 <!-- Structure HTML reprise de votre index.html original -->
-<div class="scoreboard rubberBand">
-	{#if gameMode === '' || gameMode === 'speedrun'}
-		<h3>Scoreboard (Speedrun)</h3>
-		{#if scoreboardEntries.length > 0}
-			<ol>
-				{#each scoreboardEntries as entry (entry.id)}
-					<li>{entry.pseudo} : {formatTime(entry.time_ms)}</li>
-				{/each}
-			</ol>
-		{:else}
-			<p>No scores yet. Be the first!</p>
+ {#if gameMode !== ''}
+	<div class="scoreboard rubberBand">
+		{#if gameMode === 'speedrun'}
+			<h3>Scoreboard (Speedrun)</h3>
+			{#if scoreboardEntries.length > 0}
+				<ol>
+					{#each scoreboardEntries as entry (entry.id)}
+						<li>{entry.pseudo} : {formatTime(entry.time_ms)}</li>
+					{/each}
+				</ol>
+			{:else}
+				<p>No scores yet. Be the first!</p>
+			{/if}
+		{:else if gameMode === 'anxiety'}
+			<h3>Scoreboard (Anxiety)</h3>
+			{#if anxietyScoreboardEntries.length > 0}
+				<ol>
+					{#each anxietyScoreboardEntries as entry (entry.id)}
+						<li>{entry.pseudo} : {entry.levels_completed} levels</li>
+					{/each}
+				</ol>
+			{:else}
+				<p>No scores yet. Be the first!</p>
+			{/if}
 		{/if}
-	{:else if gameMode === 'anxiety'}
-		<h3>Scoreboard (Anxiety)</h3>
-		{#if anxietyScoreboardEntries.length > 0}
-			<ol>
-				{#each anxietyScoreboardEntries as entry (entry.id)}
-					<li>{entry.pseudo} : {entry.levels_completed} levels</li>
-				{/each}
-			</ol>
-		{:else}
-			<p>No scores yet. Be the first!</p>
-		{/if}
-	{/if}
-</div>
+	</div>
+{/if}
 
 <div class="difficulty">
 	{#if !isPlaying && gameMode === ''}
