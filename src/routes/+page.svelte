@@ -1632,7 +1632,7 @@
 			{#if gameMode === 'speedrun'}
 				<Button text={formatTime(timerValue)} color="purple" animation="" disableHoverEffect={true} />
 			{:else if gameMode === 'anxiety'}
-				<Button text={`Countdown: ${anxietyCountdownValue}`} color="red" animation="" disableHoverEffect={true} />
+				<Button text={`${anxietyCountdownValue}s`} color="purple" animation="" disableHoverEffect={true} />
 			{/if}
 			<Button text="Lobby" color="orange" onClick={handleLobbyClick} animation="" /> 
 			{#if gameMode === 'training' || gameMode === 'anxiety'}
