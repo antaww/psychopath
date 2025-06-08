@@ -1504,7 +1504,7 @@
 </h1>
 
 <!-- Structure HTML reprise de votre index.html original -->
- {#if gameMode !== ''}
+ {#if gameMode !== '' && gameMode !== 'training'}
 	<div class="scoreboard rubberBand">
 		{#if gameMode === 'speedrun'}
 			<h3>Scoreboard (Speedrun)</h3>
