@@ -496,12 +496,6 @@
 		console.log('Play Speedrun');
 	}
 
-	function handlePlayInfinite() {
-		gameMode = 'infinite';
-		// Display the nickname request, etc.
-		console.log('Play Infinite');
-	}
-
 	function handlePlayTraining() {
 		gameMode = 'training';
 		selectedTrainingDifficulty = 5; // Reset to default when mode is selected
@@ -512,7 +506,6 @@
 	function handlePlayAnxiety() {
 		gameMode = 'anxiety';
 		selectedTrainingDifficulty = 0; // Not used, but reset for clarity
-		nickname = ''; // Will be used, but allow user to enter (similar to speedrun)
 		anxietyLevel = 0; // Reset
 		console.log('Play Anxiety');
 	}
