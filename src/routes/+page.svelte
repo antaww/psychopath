@@ -74,6 +74,12 @@
 	const ANXIETY_LEVEL_TIME_LIMIT = 10; // 10 seconds per level
 	// Anxiety Mode State - END
 
+	// Anxiety Mode Specific Game Over State
+	let anxietyPersonalBestRank: number | null = null;
+	let anxietyFinalLevelsActualRank: number | null = null;
+	let isNewAnxietyPersonalBest: boolean = false;
+	let previousAnxietyPersonalBestLevels: number | null = null;
+
 	function getKeyForEventComparison(bindName: string): string {
 		if (bindName === 'Space') return ' ';
 		// For most other keys like 'a', 'Shift', 'Control', event.key matches the bindName.
@@ -289,6 +295,55 @@
 		}
 	}
 
+	async function fetchAnxietyPlayerRank(playerName: string, scoreToRankLevels: number): Promise<number | null> {
+		const lowerPlayerName = playerName.toLowerCase();
+		try {
+			const { data, error, count } = await supabase
+				.from('anxiety_scores')
+				.select('pseudo', { count: 'exact', head: false })
+				.gt('levels_completed', scoreToRankLevels); // Count scores strictly greater for rank
+
+			if (error) {
+				console.error('Error fetching anxiety player rank:', error);
+				return null;
+			}
+			// The count returned by Supabase with .gt() is the number of scores strictly better.
+			// So, rank is count + 1.
+			return (count ?? 0) + 1;
+		} catch (err) {
+			console.error('Exception in fetchAnxietyPlayerRank:', err);
+			return null;
+		}
+	}
+
+	async function fetchAnxietyPersonalBest(playerName: string) {
+		if (!playerName) return;
+		const lowerPlayerName = playerName.toLowerCase();
+		try {
+			const { data: existingScoreData, error: fetchError } = await supabase
+				.from('anxiety_scores')
+				.select('levels_completed')
+				.eq('pseudo', lowerPlayerName)
+				.single();
+
+			if (fetchError && fetchError.code !== 'PGRST116') {
+				console.error('Error fetching existing anxiety personal best:', fetchError);
+				previousAnxietyPersonalBestLevels = null; // Ensure it's reset on error
+				return;
+			}
+
+			previousAnxietyPersonalBestLevels = existingScoreData?.levels_completed ?? null;
+			if (previousAnxietyPersonalBestLevels !== null) {
+				anxietyPersonalBestRank = await fetchAnxietyPlayerRank(lowerPlayerName, previousAnxietyPersonalBestLevels);
+			} else {
+				anxietyPersonalBestRank = null;
+			}
+		} catch (error) {
+			console.error('Exception in fetchAnxietyPersonalBest:', error);
+			previousAnxietyPersonalBestLevels = null; // Ensure it's reset on exception
+		}
+	}
+
 	async function saveSpeedrunScore(playerName: string, timeInMilliseconds: number) {
 		if (!playerName) {
 			console.log('Player name is empty, score not saved.');
@@ -351,6 +406,29 @@
 			if (timeInMilliseconds > 0 && finalTimeActualRank === null) { // Check if not already set
 				finalTimeActualRank = await fetchPlayerRank(lowerPlayerName, timeInMilliseconds);
 			}
+		}
+	}
+
+	async function fetchSpeedrunPersonalBest(playerName: string) {
+		if (!playerName) return;
+		const lowerPlayerName = playerName.toLowerCase();
+		try {
+			const { data: existingScoreData, error: fetchError } = await supabase
+				.from('speedrun_scores')
+				.select('time_ms')
+				.eq('pseudo', lowerPlayerName)
+				.single();
+
+			if (fetchError && fetchError.code !== 'PGRST116') {
+				console.error('Error fetching existing speedrun personal best:', fetchError);
+				previousPersonalBestMs = null; // Ensure it's reset on error
+				return;
+			}
+
+			previousPersonalBestMs = existingScoreData?.time_ms ?? null;
+		} catch (error) {
+			console.error('Exception in fetchSpeedrunPersonalBest:', error);
+			previousPersonalBestMs = null; // Ensure it's reset on exception
 		}
 	}
 
@@ -491,11 +569,35 @@
 		if (gameMode === 'speedrun') {
 			startTimer();
 			initGrid(5); // Initial difficulty for speedrun is 5
+			// Fetch existing speedrun score for the current player to determine previous PB
+			if (nickname.trim() !== '') {
+				await fetchSpeedrunPersonalBest(nickname.toLowerCase());
+				if (previousPersonalBestMs !== null) {
+					console.log(`Speedrun Personal Best for ${nickname}: ${formatTime(previousPersonalBestMs)}`);
+				} else {
+					console.log(`No previous Speedrun Personal Best found for ${nickname}.`);
+				}
+			}
 		} else if (gameMode === 'training') {
 			// Timer is not used in training mode
 			initGrid(selectedTrainingDifficulty);
 		} else if (gameMode === 'anxiety') {
 			anxietyLevel = 0; // Reset before starting new game
+			anxietyPersonalBestRank = null; // Reset for new game
+			anxietyFinalLevelsActualRank = null; // Reset for new game
+			isNewAnxietyPersonalBest = false; // Reset for new game
+			previousAnxietyPersonalBestLevels = null; // Reset for new game
+
+			// Fetch existing anxiety score for the current player to determine previous PB
+			if (nickname.trim() !== '') {
+				await fetchAnxietyPersonalBest(nickname.toLowerCase());
+				if (previousAnxietyPersonalBestLevels !== null) {
+					console.log(`Anxiety Personal Best for ${nickname}: ${previousAnxietyPersonalBestLevels} levels`);
+				} else {
+					console.log(`No previous Anxiety Personal Best found for ${nickname}.`);
+				}
+			}
+
 			initGrid(ANXIETY_INITIAL_GRID_SIZE); // Initial grid size for anxiety mode
 			// Countdown will start in generateGameLogic
 		}
@@ -519,6 +621,10 @@
 		stopAnxietyCountdown(); // Stop anxiety countdown
 		anxietyCountdownValue = ANXIETY_LEVEL_TIME_LIMIT; // Reset countdown display
 		anxietyLevel = 0; // Reset anxiety level
+		anxietyPersonalBestRank = null; // Reset for new game
+		anxietyFinalLevelsActualRank = null; // Reset for new game
+		isNewAnxietyPersonalBest = false; // Reset for new game
+		previousAnxietyPersonalBestLevels = null; // Reset for new game
 
 		if (ctx && canvasElement) {
 			ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -1051,7 +1157,7 @@
 			// Save score for anxiety mode if there's a nickname and levels were completed
 			console.log(`Anxiety mode failed. Levels completed at time of failure: ${anxietyLevel}`);
 			if (nickname.trim() !== '' && anxietyLevel > 0) {
-				saveAnxietyScore(nickname, anxietyLevel);
+				handleAnxietyGameOverAndConfetti(nickname, anxietyLevel);
 			}
 			return; // Stop further execution for anxiety fail case
 		}
@@ -1125,6 +1231,10 @@
 		stopAnxietyCountdown();
 		anxietyCountdownValue = ANXIETY_LEVEL_TIME_LIMIT;
 		anxietyLevel = 0;
+		anxietyPersonalBestRank = null;
+		anxietyFinalLevelsActualRank = null;
+		isNewAnxietyPersonalBest = false;
+		previousAnxietyPersonalBestLevels = null;
 
 		// Reset game state for a new game
 		isPlaying = true;
@@ -1188,21 +1298,31 @@
 		const lowerPlayerName = playerName.toLowerCase();
 
 		try {
-			// Fetch the existing score
+			// 1. Always fetch the rank of the levels they just got.
+			anxietyFinalLevelsActualRank = await fetchAnxietyPlayerRank(lowerPlayerName, levelsCompleted);
+
+			// 2. Fetch the existing score
 			const { data: existingScoreData, error: fetchError } = await supabase
 				.from('anxiety_scores')
 				.select('levels_completed')
 				.eq('pseudo', lowerPlayerName)
 				.single();
 
+			// PGRST116 means "Query returned 0 rows", which is normal if the player doesn't have a score yet.
 			if (fetchError && fetchError.code !== 'PGRST116') {
 				console.error('Error fetching existing anxiety score:', fetchError);
 				return;
 			}
 
 			const existingLevelsCompleted = existingScoreData?.levels_completed;
+			// Note: previousAnxietyPersonalBestLevels is set at the start of the game.
+			// Use it to determine if this run is a new PB compared to the game's start.
+			isNewAnxietyPersonalBest = (previousAnxietyPersonalBestLevels === null || levelsCompleted > previousAnxietyPersonalBestLevels);
 
-			// Compare and decide to update/insert
+			// Always store previous PB regardless for display on game over screen
+			previousAnxietyPersonalBestLevels = existingLevelsCompleted ?? null; 
+
+			// 3. Compare and decide to update/insert into DB
 			if (existingLevelsCompleted === undefined || levelsCompleted > existingLevelsCompleted) {
 				const { data, error: upsertError } = await supabase
 					.from('anxiety_scores')
@@ -1210,14 +1330,33 @@
 
 				if (upsertError) {
 					console.error('Error saving/updating anxiety score:', upsertError);
+					return;
 				} else {
 					console.log('Anxiety score saved/updated:', data);
+					// If it's a new overall personal best (based on initial PB), update the rank for display.
+					if (isNewAnxietyPersonalBest) {
+						anxietyPersonalBestRank = anxietyFinalLevelsActualRank; 
+					} else if (existingLevelsCompleted !== undefined) {
+						anxietyPersonalBestRank = await fetchAnxietyPlayerRank(lowerPlayerName, existingLevelsCompleted);
+					} else {
+						anxietyPersonalBestRank = anxietyFinalLevelsActualRank; // Fallback if no existing score but not new PB
+					}
 				}
 			} else {
 				console.log(`New anxiety score (${levelsCompleted} levels) is not better than existing score (${existingLevelsCompleted} levels) for ${lowerPlayerName}. Not updating.`);
+				// Score not updated in DB, so PB rank is based on their existing best score from DB.
+				if (existingLevelsCompleted !== undefined) {
+					anxietyPersonalBestRank = await fetchAnxietyPlayerRank(lowerPlayerName, existingLevelsCompleted);
+				} else {
+					anxietyPersonalBestRank = anxietyFinalLevelsActualRank;
+				}
 			}
 		} catch (error) {
 			console.error('Exception in saveAnxietyScore:', error);
+			// Attempt to fetch rank for current levels even on general exception
+			if (levelsCompleted > 0 && anxietyFinalLevelsActualRank === null) { // Check if not already set
+				anxietyFinalLevelsActualRank = await fetchAnxietyPlayerRank(lowerPlayerName, levelsCompleted);
+			}
 		}
 	}
 
@@ -1240,7 +1379,29 @@
 			anxietyScoreboardEntries = [];
 		}
 	}
-	// --- Supabase functions for Anxiety scores --- END
+
+	async function handleAnxietyGameOverAndConfetti(playerName: string, levelsCompleted: number) {
+		if (playerName && levelsCompleted > 0) {
+			try {
+				await saveAnxietyScore(playerName, levelsCompleted); // This updates isNewAnxietyPersonalBest, ranks, etc.
+				await fetchAnxietyScoreboard(); // Manually refresh scoreboard for the current user
+				
+				// Now trigger confetti with the updated isNewAnxietyPersonalBest
+				if (typeof confetti === 'function') {
+					confetti({
+						particleCount: isNewAnxietyPersonalBest ? 300 : 150,
+						spread: isNewAnxietyPersonalBest ? 100 : 70,
+						origin: { y: 0.6 },
+						zIndex: 1005 // Ensure confetti is above the modal (modal z-index is 1000)
+					});
+				}
+			} catch (e) {
+				console.error("Error during anxiety score processing or confetti:", e);
+			}
+		} else {
+			console.warn("Invalid nickname or levels completed for anxiety score processing.", "Nickname:", playerName, "Levels:", levelsCompleted);
+		}
+	}
 
 	onMount(async () => {
 		if (browser) {
@@ -1593,7 +1754,21 @@
 	<div class="modal game-over-modal {showGameOverScreen ? 'modal-box-bounce-animation is-visible' : 'modal-leave'}">
 		<h2>Anxiety Mode Game Over!</h2>
 		<p class="final-time">Levels Completed: {anxietyLevel}</p>
-		<!-- Optionally show rank here if implementing one for anxiety mode -->
+		{#if anxietyFinalLevelsActualRank !== null}
+			<p class="final-time-rank">(This run's rank: {anxietyFinalLevelsActualRank})</p>
+		{/if}
+		
+		{#if anxietyPersonalBestRank !== null}
+			<p class="player-rank">Your Personal Best Rank: {anxietyPersonalBestRank}</p>
+		{/if}
+
+		{#if isNewAnxietyPersonalBest}
+			<p class="personal-best-new">🎉 New Personal Best! 🎉</p>
+		{:else if previousAnxietyPersonalBestLevels !== null}
+			<p class="personal-best-old">
+				Not a new PB. Your best: {previousAnxietyPersonalBestLevels} levels
+			</p>
+		{/if}
 		<div class="game-over-buttons">
 			<Button text="Play Again" color="green" onClick={handlePlayAgainFromGameOver} animation="bounceInDown" />
 			<Button text="Lobby" color="orange" onClick={handleLobbyFromGameOver} animation="bounceInDown" />
